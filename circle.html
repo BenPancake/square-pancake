@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <script>
+let canvas = document.createElement("canvas");
+canvas.width = 1366;
+canvas.height = 768;
+let ctx = canvas.getContext("2d");
+document.body.appendChild(canvas);
+canvas.style = "left: 0px; top: 0px; position: absolute;";
+
+function DEsegment(px, py, x0, y0, x1, y1) {
+	px -= x0;
+	py -= y0;
+	x1 -= x0;
+	y1 -= y0;
+	let c = Math.sqrt(x1 * x1 + y1 * y1);
+	let rx = (px * x1 + py * y1) / c;
+	let ry = (py * x1 - px * y1) / c;
+	if (rx > 0) {
+		rx -= c;
+		if (rx < 0) {
+			rx = 0;
+		}
+	}
+	return Math.sqrt(rx * rx + ry * ry);
+}
+let gameArea = {
+    width: 1024,
+    height: 768
+}
+// playable area is 1024x768, 171 pixels on either side for controls, 342
+let imageData = new ImageData(canvas.width, canvas.height);
+let DEdata = [];
+function DEslow(px, py) {
+    return Math.min(DEsegment(px, py, 100, 200, 300, 200), DEsegment(px, py, 300, 300, 500, 100)) - 2;
+}
+function updateDEdata() {
+    for (let y = 0; y < gameArea.height; y++) {
+        for (let x = 0; x < gameArea.width; x++) {
+            DEdata[y * gameArea.width + x] = DEslow(x, y);
+        }
+    }
+}
+updateDEdata();
+function DEfast(px, py) {
+    let x0 = Math.floor(px);
+    let x1 = x0 + 1;
+    let y0 = Math.floor(py);
+    let y1 = y0 + 1;
+    let d00 = DEdata[x0 + y0 * gameArea.width];
+    let d10 = DEdata[x1 + y0 * gameArea.width];
+    let d01 = DEdata[x0 + y1 * gameArea.width];
+    let d11 = DEdata[x1 + y1 * gameArea.width];
+    let fracx = px - x0;
+    let fracy = py - y1;
+    let crafx = 1 - fracx;
+    let crafy = 1 - fracy;
+    return d00 * crafx * crafy + d10 * fracx * crafy + d01 * crafx * fracy + d11 * fracx * fracy;
+}
+function NMfast(px, py) {
+    let d = 1;
+    let xvec = DEfast(px + d, py) - DEfast(px - d, py);
+    let yvec = DEfast(px, py + d) - DEfast(px, py - d);
+    d = Math.sqrt(xvec * xvec + yvec * yvec);
+    return [xvec / d, yvec / d];
+}
+/*
+Dead Role Models: Stephen Hawking, Neil Armstrong, Bill Nye
+Live Role Models: Bill Nye, Randall Munroe
+*/
+function Player(x, y, r) {
+    this.spawnX = x;
+    this.spawnY = y;
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    this.vx = 0;
+    this.vy = 0;
+    this.airTime = 0;
+    this.keys = {
+        a: false,
+        b: false,
+        c: false, // schloop in
+        d: false // airblast shield
+    }
+    this.controls = {
+        speed: 1,
+        vector: [0, 0]
+    }
+    this.move = function() {
+        let subStepDist = this.r / 10;
+        let time = 0;
+        let beforeX = this.x;
+        let beforeY = this.y;
+        while (true) { // this could be a problem area
+            if (time > 1) {
+                break;
+            }
+            let dt = subStepDist / Math.sqrt(this.vx ** 2 + this.vy ** 2);
+            if (time + dt > 1) {
+                dt = 1 - time;
+                time = 2;
+            }
+            time += dt;
+            
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            let distToGeom = DEfast(this.x, this.y) - this.r;
+            if (distToGeom < 0) {
+                let norm = NMfast(this.x, this.y);
+                this.x -= norm[0] * distToGeom;
+                this.y -= norm[1] * distToGeom;
+                this.airTime = 0;
+            }
+        }
+        this.vx = this.x - beforeX;
+        this.vy = this.y - beforeY;
+        if (this.x < gameArea.width / 2) {
+            this.vx += .1;
+        }
+        else {
+            this.vx -= .1;
+        }
+    }
+    this.draw = function() {
+        ctx.beginPath();
+        ctx.fillStyle = this.keys.a ? "#f00" : this.keys.b ? "#ff0" : this.keys.c ? "#0f0" : this.keys.d ? "#00f" : "#000";
+        ctx.arc(this.x + 171, this.y, this.r, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
+    }
+    this.step = function() {
+        this.airTime++;
+        this.move();
+        this.vx += this.controls.vector[0];
+        this.vy += this.controls.vector[1];
+        if (this.airTime < 2) {
+            this.vx *= .9;
+            this.vy *= .9;
+        }
+        else {
+            this.vx *= .95;
+            this.vy *= .95;
+        }
+        this.draw();
+    }
+}
+// to do: attacks (inblast, airblast, rocket) and levels
+let players = [new Player(100, 50, 20), new Player(200, 50, 20)];
+let controls = {
+    dirCircle: {x: 171/2, y: 171/2, or: 171/2, ir: 171/4},
+    attCircle: {x: 171/2, y: canvas.height - 171/2, or: 171/2, ir: 171/4}
+}
+
+function updateBackground() {
+    ctx.beginPath();
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.fillStyle = "#fff";
+    ctx.moveTo(controls.dirCircle.x, controls.dirCircle.y);
+    ctx.arc(controls.dirCircle.x, controls.dirCircle.y, controls.dirCircle.or, 0, 2 * Math.PI);
+    ctx.moveTo(controls.attCircle.x, controls.attCircle.y);
+    ctx.arc(controls.attCircle.x, controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+    ctx.moveTo(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y);
+    ctx.arc(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y, controls.dirCircle.or, 0, 2 * Math.PI);
+    ctx.moveTo(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y);
+    ctx.arc(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.fillStyle = "#000";
+    ctx.moveTo(controls.dirCircle.x, controls.dirCircle.y);
+    ctx.arc(controls.dirCircle.x, controls.dirCircle.y, controls.dirCircle.ir, 0, 2 * Math.PI);
+    ctx.moveTo(controls.attCircle.x, controls.attCircle.y);
+    ctx.arc(controls.attCircle.x, controls.attCircle.y, controls.attCircle.ir, 0, 2 * Math.PI);
+    ctx.moveTo(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y);
+    ctx.arc(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y, controls.dirCircle.ir, 0, 2 * Math.PI);
+    ctx.moveTo(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y);
+    ctx.arc(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y, controls.attCircle.ir, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
+    ctx.beginPath();
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+        let ang = (i + .5) * Math.PI / 2;
+        let cos = Math.cos(ang);
+        let sin = Math.sin(ang);
+        ctx.moveTo(cos * controls.attCircle.ir + controls.attCircle.x, sin * controls.attCircle.ir + controls.attCircle.y);
+        ctx.lineTo(cos * controls.attCircle.or + controls.attCircle.x, sin * controls.attCircle.or + controls.attCircle.y);
+        ctx.moveTo(canvas.width - cos * controls.attCircle.ir - controls.attCircle.x, canvas.height - sin * controls.attCircle.ir - controls.attCircle.y);
+        ctx.lineTo(canvas.width - cos * controls.attCircle.or - controls.attCircle.x, canvas.height - sin * controls.attCircle.or - controls.attCircle.y);
+    }
+    ctx.stroke();
+    ctx.closePath();
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // gameplay space is 1024x768
+    for (let y = 0; y < gameArea.height; y++) {
+        for (let x = 0; x < gameArea.width; x++) {
+            let dataX = x + 171;
+            let index = 4 * (y * canvas.width + dataX);
+            imageData.data[index] = imageData.data[index + 1] = imageData.data[index + 2] = (DEdata[y * gameArea.width + x] > 0 ? 255 : 0);
+            imageData.data[index + 3] = 255;
+        }
+    }
+}
+updateBackground();
+function gameStep() {
+    ctx.putImageData(imageData, 0, 0);
+    players[0].step();
+    players[1].step();
+}
+setInterval(gameStep, 50);
+
+function touchChangeHandler(e) {
+    for (let i = 0; i < 2; i++) {
+        players[i].keys.a = false;
+        players[i].keys.b = false;
+        players[i].keys.c = false;
+        players[i].keys.d = false;
+        players[i].controls.vector = [0, 0];
+    }
+    for (let touch of e.touches) {
+        let cx = touch.clientX;
+        let cy = touch.clientY;
+        if (cx < 171 || cx >= canvas.width - 171) {
+            let player = cx > canvas.width / 2 ? 1 : 0;
+            if (player) {
+                cx = canvas.width - cx;
+                cy = canvas.height - cy;
+            }
+            let dirDistX = cx - controls.dirCircle.x;
+            let dirDistY = cy - controls.dirCircle.y;
+            let attDistX = cx - controls.attCircle.x;
+            let attDistY = cy - controls.attCircle.y;
+            if (player) {
+                dirDistX *= -1;
+                dirDistY *= -1;
+            }
+            let dToDir = Math.sqrt(dirDistX ** 2 + dirDistY ** 2);
+            let dToAtt = Math.sqrt(attDistX ** 2 + attDistY ** 2);
+            //let angToDir = Math.atan2(dirDistY, dirDistX);
+            //let angToAtt = Math.atan2(dirDistY, dirDistX);
+            if (dToDir < controls.dirCircle.or && dToDir > controls.dirCircle.ir) {
+                players[player].controls.vector = [dirDistX / dToDir, dirDistY / dToDir];
+            }
+            if (dToAtt < controls.attCircle.or && dToAtt > controls.attCircle.ir) {
+                if (Math.abs(attDistX) > Math.abs(attDistY)) {
+                    if (attDistX > 0) {
+                        players[player].keys.a = true;
+                    }
+                    else {
+                        players[player].keys.b = true;
+                    }
+                }
+                else {
+                    if (attDistY > 0) {
+                        players[player].keys.c = true;
+                    }
+                    else {
+                        players[player].keys.d = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+addEventListener("touchstart", touchChangeHandler, false);
+addEventListener("touchmove", touchChangeHandler, false);
+addEventListener("touchend", touchChangeHandler, false);
+        </script>
+    </body>
+</html>
