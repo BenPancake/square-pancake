@@ -2,13 +2,14 @@
 <html>
     <body>
         <script>
-screen.orientation.lock("landscape-primary");
 let canvas = document.createElement("canvas");
 canvas.width = 1366;
 canvas.height = 768;
 let ctx = canvas.getContext("2d");
 document.body.appendChild(canvas);
 canvas.style = "left: 0px; top: 0px; position: absolute;";
+canvas.requestFullscreen();
+screen.orientation.lock("landscape-primary");
 
 function DEsegment(px, py, x0, y0, x1, y1) {
     x0 *= 64;
