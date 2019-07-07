@@ -1,0 +1,9 @@
+The Adventures of the Rare Square Pancake, Square Pancake: 2, and Square Pancake: 3 are nowhere to be found.
+
+TAotRSP (Square Pancake 1) was my first game.  It was top-down.  It had bouncing lava, the grey ghost pancake in its first level, and boxes, buttons, the bullet, and targets.  The collision worked, somehow.  There were different skins for the player after completing the game, which included Cat, Companion Cube, and Cyan (request of a friend).
+
+Square Pancake 2 and Square Pancake 3, I can't remember the difference between the two.  There were blue bouncing platforms, orange (SP2?) or light grey (SP3?) speed platforms.  The bullet was an unlock after avoiding the ghost.  There were sticky platforms (you could crawl on them) and timed platforms (disappeared after a certain amount of time), much like that of Square Pancake: Tree.
+
+
+
+Square Pancake: Tree was pretty much a reskin of Square Pancake 3 for a game design class.  The background was trees, but I later replaced it with the (apparently, I have no problem with it) cursed NVIDIA face.  SP: Tanks was something that I worked on earlier this year, and SP: Circles was something from this year.
