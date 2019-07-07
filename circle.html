@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+let canvas = document.createElement("canvas");
+canvas.width = 1366;
+canvas.height = 768;
+let ctx = canvas.getContext("2d");
+document.body.appendChild(canvas);
+canvas.style = "left: 0px; top: 0px; position: absolute;";
+let fullscreen = false;
+let fscEventTouch, fscEventMouse;
+function tryFullscreen() { // doesn't actually work, just thought I would try it
+	canvas.requestFullscreen();
+	screen.orientation.lock("landscape-primary"); // you'll get an error if the browser rejects it, but it's ok
+	//canvas.removeEventListener(fscEventTouch);
+	//canvas.removeEventListener(fscEventMouse);
+}
+fscEventTouch = canvas.addEventListener("touchstart", tryFullscreen);
+fscEventMouse = canvas.addEventListener("mousedown", tryFullscreen);
+
+let global = {
+	timeSinceRoundStart: 0
+}
+
+function DEsegment(px, py, x0, y0, x1, y1) {
+	x0 *= 64;
+	y0 *= 64;
+	x1 *= 64;
+	y1 *= 64;
+	px -= x0;
+	py -= y0;
+	x1 -= x0;
+	y1 -= y0;
+	let c = Math.sqrt(x1 * x1 + y1 * y1);
+	let rx = (px * x1 + py * y1) / c;
+	let ry = (py * x1 - px * y1) / c;
+	if (rx > 0) {
+		rx -= c;
+		if (rx < 0) {
+			rx = 0;
+		}
+	}
+	return Math.sqrt(rx * rx + ry * ry);
+}
+let gameArea = {
+	width: 1024,
+	height: 768
+}
+// playable area is 1024x768, 171 pixels on either side for controls, 342
+let imageData = new ImageData(canvas.width, canvas.height);
+let DEdata = [];
+
+let rooms = {
+	neu0: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu0",
+		winOrange: "ora0",
+	},
+	neu1: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu2",
+		winOrange: "ora2",
+	},
+	neu2: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu3",
+		winOrange: "ora3",
+	},
+	neu3: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu4",
+		winOrange: "ora4",
+	},
+	blu0: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu1",
+		winOrange: "neu1",
+	},
+	blu1: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu4",
+		winOrange: "blu2",
+	},
+	blu2: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 5, 3), DEsegment(px, py, 3, 4, 5, 1), DEsegment(px, py, 8, 4, 6, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu4",
+		winOrange: "neu2",
+	},
+	blu3: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 1, 2, 3, 2), DEsegment(px, py, 3, 3, 5, 1), DEsegment(px, py, 8, 4, 10, 3)) - 2;
+		},
+		grav: function(entity) {
+			if (entity.x < gameArea.width / 2) {
+				entity.vx += .1;
+			}
+			else {
+				entity.vx -= .1;
+			}
+		},
+		winBlue: "blu4",
+		winOrange: "neu3",
+	},
+	blu4: {
+		de: function(px, py) {
+			return Math.min(DEsegment(px, py, 0, 5, 2, 5), DEsegment(px, py, 2, 5, 2, 7),
+			DEsegment(px, py, 0, 5, 0, 7), DEsegment(px, py, 0, 7, 2, 7)) - 2;
+		},
+		grav: function(entity) {
+		},
+		winBlue: "blu4",
+		winOrange: "neu0"
+	}
+};
+function oppositeRoom(room) {
+	let n = room[3];
+	if (room[0] == "n") {
+		return "neu" + n;
+	}
+	else if (room[0] == "o") {
+		return "blu" + n;
+	}
+	else if (room[0] == "b") {
+		return "ora" + n;
+	}
+}
+for (let i = 0; i < 5; i++) {
+	rooms["ora" + i] = {};
+	rooms["ora" + i].grav = rooms["blu" + i].grav;
+	rooms["ora" + i].winOrange = oppositeRoom(rooms["blu" + i].winBlue);
+	rooms["ora" + i].winBlue = oppositeRoom(rooms["blu" + i].winOrange);
+}
+let currentRoom = "neu0";
+let players = [];
+let grenades = [];
+
+function Grenade(x, y, owner, vx, vy) {
+	this.x = x;
+	this.y = y;
+	this.r = 430/43;
+	this.vx = vx;
+	this.vy = vy;
+	this.killMePlease = false;
+	this.owner = owner;
+	players[owner].grenadesOut++;
+	this.timer = 0;
+	this.move = function() {
+		this.x += this.vx;
+		this.y += this.vy;
+		rooms[currentRoom].grav(this);
+	}
+	this.draw = function() {
+		ctx.beginPath();
+		ctx.fillStyle = this.owner ? "#013" : "#310";
+		ctx.arc(this.x + 171, this.y, this.r, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	}
+	this.step = function() {
+		this.move();
+		this.draw();
+		let inRange = ((players[1 - owner].x - this.x) ** 2 + (players[1 - owner].y - this.y) ** 2 < (players[1 - owner].r + this.r) ** 2);
+		if (DEfast(this.x, this.y) < this.r || inRange || this.timer++ > 100) {
+			for (let i = 0; i < 2; i++) {
+				let xDif = players[i].x - this.x;
+				let yDif = players[i].y - this.y;
+				let dif2 = xDif ** 2 + yDif ** 2;
+				if (dif2 < (players[i].r + this.r + 16) ** 2) {
+					players[i].vx += xDif / (dif2 + 1) * 300 * (players[i].percent / 100 + 1);
+					players[i].vy += yDif / (dif2 + 1) * 300 * (players[i].percent / 100 + 1);
+					players[i].percent += Math.floor(100 / (Math.sqrt(Math.sqrt(dif2)) + 1));
+				}
+			}
+			this.killMePlease = true;
+		}
+		if (this.x < 0 || this.x > gameArea.width || this.y < 0 || this.y > gameArea.height) {
+			this.killMePlease = true;
+		}
+		return this.killMePlease;
+	}
+}
+function Player(x, y, r, id) {
+	this.spawnX = x;
+	this.spawnY = y;
+	this.x = x;
+	this.y = y;
+	this.r = r;
+	this.vx = 0;
+	this.vy = 0;
+	this.airTime = 0;
+	this.grenadesOut = 0;
+	this.percent = 0;
+	this.keys = { // 0 for not pressed, 1 for first frame, 2 for being pressed, 3 for frame after pressed
+		a: 0, // grenade
+		b: 0,
+		c: 0, // schloop in
+		d: 0 // airblast shield
+	}
+	this.controls = {
+		speed: 1,
+		vector: [0, 0]
+	}
+	this.move = function() {
+		let subStepDist = this.r / 10;
+		let time = 0;
+		let beforeX = this.x;
+		let beforeY = this.y;
+		while (true) { // this could be a problem area
+			if (time > 1) {
+				break;
+			}
+			let dt = subStepDist / Math.sqrt(this.vx ** 2 + this.vy ** 2);
+			if (time + dt > 1) {
+				dt = 1 - time;
+				time = 2;
+			}
+			time += dt;
+			
+			this.x += this.vx * dt;
+			this.y += this.vy * dt;
+			let distToGeom = DEfast(this.x, this.y) - this.r;
+			if (distToGeom < 0) {
+				let norm = NMfast(this.x, this.y);
+				this.x -= norm[0] * distToGeom;
+				this.y -= norm[1] * distToGeom;
+				this.airTime = 0;
+			}
+		}
+		this.vx = this.x - beforeX;
+		this.vy = this.y - beforeY;
+		rooms[currentRoom].grav(this);
+	}
+	this.draw = function() {
+		ctx.beginPath();
+		ctx.fillStyle = ["#530", "#035", "#641", "#146"][id + (this.keys.a == 1 || this.keys.a == 2) * 2];
+		ctx.arc(this.x + 171, this.y, this.r, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	}
+	this.step = function() {
+		this.airTime++;
+		this.move();
+		this.vx += this.controls.vector[0];
+		this.vy += this.controls.vector[1];
+		if (this.airTime < 2) {
+			this.vx *= .9;
+			this.vy *= .9;
+		}
+		else {
+			this.vx *= .95;
+			this.vy *= .95;
+		}
+		this.draw();
+		if (this.keys.a == 1 && this.grenadesOut < 5) {
+			grenades.push(new Grenade(this.x, this.y, id, this.controls.vector[0] * 20, this.controls.vector[1] * 20));
+		}
+		for (let key of ["a", "b", "c", "d"]) {
+			if (this.keys[key] == 3) {
+				this.keys[key] = 0;
+			}
+			else if (this.keys[key] == 1) {
+				this.keys[key] = 2;
+			}
+		}
+		if (this.x < 0 || this.x > gameArea.width || this.y < 0 || this.y > gameArea.height) {
+			lose(id);
+		}
+	}
+}
+// to do: attacks, transitions, control feedback
+players = [new Player(64 * 1, 64 * 6, 32, 0), new Player(64 * 15, 64 * 6, 32, 1)];
+
+let controls = {
+	dirCircle: {x: 171/2, y: 171/2, or: 171/2, ir: 0},
+	attCircle: {x: 171/2, y: canvas.height - 171/2, or: 171/2, ir: 0}
+}
+function updateBackground() {
+	ctx.beginPath();
+	ctx.fillStyle = "#750";
+	ctx.fillRect(0, 0, 171, canvas.height);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#057";
+	ctx.fillRect(canvas.width - 171, 0, 171, canvas.height);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#fff";
+	ctx.moveTo(controls.dirCircle.x, controls.dirCircle.y);
+	ctx.arc(controls.dirCircle.x, controls.dirCircle.y, controls.dirCircle.or, 0, 2 * Math.PI);
+	ctx.moveTo(controls.attCircle.x, controls.attCircle.y);
+	ctx.arc(controls.attCircle.x, controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+	ctx.moveTo(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y);
+	ctx.arc(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y, controls.dirCircle.or, 0, 2 * Math.PI);
+	ctx.moveTo(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y);
+	ctx.arc(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#000";
+	ctx.moveTo(controls.dirCircle.x, controls.dirCircle.y);
+	ctx.arc(controls.dirCircle.x, controls.dirCircle.y, controls.dirCircle.ir, 0, 2 * Math.PI);
+	ctx.moveTo(controls.attCircle.x, controls.attCircle.y);
+	ctx.arc(controls.attCircle.x, controls.attCircle.y, controls.attCircle.ir, 0, 2 * Math.PI);
+	ctx.moveTo(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y);
+	ctx.arc(canvas.width - controls.dirCircle.x, canvas.height - controls.dirCircle.y, controls.dirCircle.ir, 0, 2 * Math.PI);
+	ctx.moveTo(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y);
+	ctx.arc(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y, controls.attCircle.ir, 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.closePath();
+	/*ctx.beginPath();
+	ctx.strokeStyle = "#000";
+	ctx.lineWidth = 2;
+	for (let i = 0; i < 4; i++) {
+		let ang = (i + .5) * Math.PI / 2;
+		let cos = Math.cos(ang);
+		let sin = Math.sin(ang);
+		ctx.moveTo(cos * controls.attCircle.ir + controls.attCircle.x, sin * controls.attCircle.ir + controls.attCircle.y);
+		ctx.lineTo(cos * controls.attCircle.or + controls.attCircle.x, sin * controls.attCircle.or + controls.attCircle.y);
+		ctx.moveTo(canvas.width - cos * controls.attCircle.ir - controls.attCircle.x, canvas.height - sin * controls.attCircle.ir - controls.attCircle.y);
+		ctx.lineTo(canvas.width - cos * controls.attCircle.or - controls.attCircle.x, canvas.height - sin * controls.attCircle.or - controls.attCircle.y);
+	}
+	ctx.stroke();
+	ctx.closePath();*/
+	
+	
+	
+	
+	imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	// gameplay space is 1024x768
+	for (let y = 0; y < gameArea.height; y++) {
+		for (let x = 0; x < gameArea.width; x++) {
+			let dataX = x + 171;
+			let index = 4 * (y * canvas.width + dataX);
+			imageData.data[index] = imageData.data[index + 1] = imageData.data[index + 2] = (DEdata[y * gameArea.width + x] > 0 ? 255 : 0);
+			imageData.data[index + 3] = 255;
+		}
+	}
+	ctx.putImageData(imageData, 0, 0);
+	ctx.beginPath();
+	ctx.strokeStyle = "#aaa";
+	let yoff = -16;
+	ctx.strokeRect(171 + gameArea.width / 2 - 32, gameArea.height / 2 - 3 * 32 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 64, gameArea.height / 2 - 2 * 32 + yoff, 64, 32);
+	ctx.strokeRect(171 + gameArea.width / 2, gameArea.height / 2 - 2 * 32 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 96, gameArea.height / 2 - 32 + yoff, 64, 32);
+	ctx.strokeRect(171 + gameArea.width / 2 - 32, gameArea.height / 2 - 32 + yoff, 64, 32);
+	ctx.strokeRect(171 + gameArea.width / 2 + 32, gameArea.height / 2 - 32 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 64, gameArea.height / 2 + yoff, 64, 32);
+	ctx.strokeRect(171 + gameArea.width / 2, gameArea.height / 2 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 32, gameArea.height / 2 + 32 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 64, gameArea.height / 2 + 64 + yoff, 64, 32);
+	ctx.strokeRect(171 + gameArea.width / 2, gameArea.height / 2 + 64 + yoff, 64, 32);
+	
+	ctx.strokeRect(171 + gameArea.width / 2 - 32, gameArea.height / 2 + 96 + yoff, 64, 32);
+	ctx.closePath();
+	let coordsSmallRoom = {
+		neu0: [-32, -96],
+		
+		ora0: [-64, -64],
+		blu0: [0, -64],
+		
+		ora1: [-96, -32],
+		neu1: [-32, -32],
+		blu1: [32, -32],
+		
+		ora2: [-64, 0],
+		blu2: [0, 0],
+		
+		neu2: [-32, 32],
+		
+		ora3: [-64, 64],
+		blu3: [0, 64],
+		
+		neu3: [-32, 96],
+		
+		ora4: [-160, 96],
+		blu4: [96, 96]
+	};
+	
+	ctx.beginPath();
+	ctx.fillStyle = "#aaa";
+	ctx.fillRect(171 + gameArea.width / 2 + coordsSmallRoom[currentRoom][0], gameArea.height / 2 + yoff + coordsSmallRoom[currentRoom][1], 64, 32);
+	ctx.closePath();
+	imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+function updateDEdata() {
+	global.timer = 0;
+	let room = currentRoom;
+	if (room[0] == "o") { // orange side, mirror corresponding blu
+		room = "blu" + room[3];
+		for (let y = 0; y < gameArea.height; y++) {
+			for (let x = 0; x < gameArea.width; x++) {
+				DEdata[y * gameArea.width + x] = rooms[room].de(gameArea.width - x - 1, gameArea.height - y - 1);
+			}
+		}
+	}
+	else if (room[0] == "b") { // blue side, just do blu
+		for (let y = 0; y < gameArea.height; y++) {
+			for (let x = 0; x < gameArea.width; x++) {
+				DEdata[y * gameArea.width + x] = rooms[room].de(x, y);
+			}
+		}
+	}
+	else {
+		for (let y = 0; y < gameArea.height; y++) {
+			for (let x = 0; x < gameArea.width; x++) {
+				DEdata[y * gameArea.width + x] = Math.min(rooms[room].de(x, y), rooms[room].de(gameArea.width - x - 1, gameArea.height - y - 1));
+			}
+		}
+	}
+	for (let i = 0; i < 2; i++) {
+		players[i].x = (i == 0 ? 64 : 64 * 15);
+		players[i].y = 64 * 6;
+		players[i].vx = 0;
+		players[i].vy = 0;
+		players[i].percent = 0;
+	}
+	updateBackground();
+}
+updateDEdata();
+function lose(id) { // p0 is orange, p1 is blue
+	let nextRoom;
+	if (id == 1) { // winOrange
+		nextRoom = rooms[currentRoom].winOrange;
+	}
+	else { // winBlue
+		nextRoom = rooms[currentRoom].winBlue;
+	}
+	currentRoom = nextRoom;
+	updateDEdata(currentRoom);
+}
+function DEfast(px, py) {
+	let x0 = Math.floor(px);
+	let x1 = x0 + 1;
+	let y0 = Math.floor(py);
+	let y1 = y0 + 1;
+	let d00 = DEdata[x0 + y0 * gameArea.width];
+	let d10 = DEdata[x1 + y0 * gameArea.width];
+	let d01 = DEdata[x0 + y1 * gameArea.width];
+	let d11 = DEdata[x1 + y1 * gameArea.width];
+	let fracx = px - x0;
+	let fracy = py - y1;
+	let crafx = 1 - fracx;
+	let crafy = 1 - fracy;
+	return d00 * crafx * crafy + d10 * fracx * crafy + d01 * crafx * fracy + d11 * fracx * fracy;
+}
+function NMfast(px, py) {
+	let d = 1;
+	let xvec = DEfast(px + d, py) - DEfast(px - d, py);
+	let yvec = DEfast(px, py + d) - DEfast(px, py - d);
+	d = Math.sqrt(xvec * xvec + yvec * yvec);
+	return [xvec / d, yvec / d];
+}
+/*
+Dead Role Models: Stephen Hawking, Neil Armstrong, Bill Nye
+Live Role Models: Bill Nye, Randall Munroe
+*/
+
+function gameStep() {
+	ctx.putImageData(imageData, 0, 0);
+	if (global.timer > 100) {
+		players[0].step();
+		players[1].step();
+		for (let i = 0; i < grenades.length; i++) {
+			let killMe = grenades[i].step();
+			if (killMe) {
+				players[grenades[i].owner].grenadesOut--;
+				grenades.splice(i, 1);
+				i--;
+			}
+		}
+		ctx.beginPath();
+		ctx.fillStyle = "#fff";
+		ctx.font = "30px monospace";
+		ctx.textAlign = "right";
+		ctx.rotate(Math.PI / 2);
+		ctx.fillText(players[0].percent + "%", 500, -30);
+		ctx.fillText(players[1].percent + "%", 500, -90);
+		ctx.rotate(Math.PI);
+		ctx.fillText(players[1].percent + "%", 500 - canvas.height, canvas.width - 30);
+		ctx.fillText(players[0].percent + "%", 500 - canvas.height, canvas.width - 90);
+		ctx.rotate(Math.PI / 2);
+		ctx.closePath();
+	}
+	ctx.beginPath();
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = "#000";
+	ctx.lineCap = "round";
+	ctx.moveTo(controls.dirCircle.x + players[0].controls.vector[0] * controls.dirCircle.ir,
+		controls.dirCircle.y + players[0].controls.vector[1] * controls.dirCircle.ir);
+	ctx.lineTo(controls.dirCircle.x + players[0].controls.vector[0] * controls.dirCircle.or,
+		controls.dirCircle.y + players[0].controls.vector[1] * controls.dirCircle.or);
+	ctx.moveTo(controls.dirCircle.x + players[1].controls.vector[0] * controls.dirCircle.ir + canvas.width - 171,
+		controls.dirCircle.y + players[1].controls.vector[1] * controls.dirCircle.ir + canvas.height - 171);
+	ctx.lineTo(controls.dirCircle.x + players[1].controls.vector[0] * controls.dirCircle.or + canvas.width - 171,
+		controls.dirCircle.y + players[1].controls.vector[1] * controls.dirCircle.or + canvas.height - 171);
+	ctx.stroke();
+	ctx.closePath();
+	if (players[0].keys.a) {
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.moveTo(controls.attCircle.x, controls.attCircle.y);
+		ctx.arc(controls.attCircle.x, controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	}
+	if (players[1].keys.a) {
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.moveTo(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y);
+		ctx.arc(canvas.width - controls.attCircle.x, canvas.height - controls.attCircle.y, controls.attCircle.or, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	}
+	global.timer++;
+}
+setInterval(gameStep, 43);
+
+function touchKey(keyVal) { // 4 -> 5, 5 -> 6, 6 -> 6, 7 -> 5
+	keyVal %= 4;
+	if (keyVal == 0 || keyVal == 3) {
+		keyVal = 1;
+	}
+	keyVal += 4;
+	return keyVal;
+}
+
+function evaluateKeyVal(keyVal) {
+	if (keyVal >= 4) {
+		return keyVal - 4;
+	}
+	else if (keyVal == 0 || keyVal == 3) {
+		return 0;
+	}
+	else if (keyVal == 2 || keyVal == 1) {
+		return 3;
+	}
+}
+
+function generalChangeHandler(list) {
+	for (let i = 0; i < 2; i++) {
+		/*players[i].keys.a += 4;
+		players[i].keys.b += 4;
+		players[i].keys.c += 4;
+		players[i].keys.d += 4;*/
+		players[i].controls.vector = [0, 0];
+	}
+	for (let touch of list) {
+		let cx = touch[0];
+		let cy = touch[1];
+		if (cx < 171 || cx >= canvas.width - 171) {
+			let player = cx > canvas.width / 2 ? 1 : 0;
+			if (player) {
+				cx = canvas.width - cx;
+				cy = canvas.height - cy;
+			}
+			let dirDistX = cx - controls.dirCircle.x;
+			let dirDistY = cy - controls.dirCircle.y;
+			let attDistX = cx - controls.attCircle.x;
+			let attDistY = cy - controls.attCircle.y;
+			if (player) {
+				dirDistX *= -1;
+				dirDistY *= -1;
+			}
+			let dToDir = Math.sqrt(dirDistX ** 2 + dirDistY ** 2);
+			let dToAtt = Math.sqrt(attDistX ** 2 + attDistY ** 2);
+			//let angToDir = Math.atan2(dirDistY, dirDistX);
+			//let angToAtt = Math.atan2(dirDistY, dirDistX);
+			if (dToDir < controls.dirCircle.or && dToDir > controls.dirCircle.ir) {
+				players[player].controls.vector = [dirDistX / dToDir, dirDistY / dToDir];
+			}
+			if (dToAtt < controls.attCircle.or && dToAtt > controls.attCircle.ir) {
+				if (Math.abs(attDistX) > Math.abs(attDistY)) {
+					if (attDistX > 0) {
+						players[player].keys.a = touchKey(players[player].keys.a);
+					}
+					else {
+						players[player].keys.a = touchKey(players[player].keys.a);
+					}
+				}
+				else {
+					if (attDistY > 0) {
+						players[player].keys.a = touchKey(players[player].keys.a);
+					}
+					else {
+						players[player].keys.a = touchKey(players[player].keys.a);
+					}
+				}
+			}
+		}
+	}
+	for (let i = 0; i < 2; i++) {
+		players[i].keys.a = evaluateKeyVal(players[i].keys.a);
+		players[i].keys.b = evaluateKeyVal(players[i].keys.b);
+		players[i].keys.c = evaluateKeyVal(players[i].keys.c);
+		players[i].keys.d = evaluateKeyVal(players[i].keys.d);
+	}
+}
+
+function actualTouchHandler(e) {
+	e.preventDefault();
+	let list = [];
+	for (let touch of e.touches) {
+		list.push([touch.clientX, touch.clientY]);
+	}
+	generalChangeHandler(list);
+}
+
+canvas.addEventListener("mousedown", function(e) {
+	generalChangeHandler([[e.clientX, e.clientY]]);
+}, false);
+canvas.addEventListener("mouseup", function(e) {
+	generalChangeHandler([]);
+}, false);
+canvas.addEventListener("touchstart", actualTouchHandler, false); // e.preventDefault() won't work without the "canvas.".
+canvas.addEventListener("touchmove", actualTouchHandler, false);
+canvas.addEventListener("touchend", actualTouchHandler, false);
+
+/*
+
+
+The following is conjecture, but based on tons of reading.  Sentience is at least partially self-reported in any case, whether it be a normal person, tulpa, or android (I'm concerned about future android rights, so I might as well say something about it now).  Star Trek isn't really a reliable source, but I do believe that it analyses sentience correctly: a combination of self-awareness, consciousness, and intelligence (ability to freely use language).  Each of these are blurry as of yet, and it involves a lot of self-reporting.  For the purpose of this writing, we won't get no where if we don't assume that if someone can self-report these things and hold a conversation, they're sentient.
+
+Tulpas are imaginary friends that can think on their own.
+
+Tulpas come in many different forms, and can be made in many different ways.
+
+*/
+		</script>
+	</body>
+</html>
