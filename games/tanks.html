@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+(function() {
+	let canvas = document.createElement("canvas");
+	let ctx = canvas.getContext("2d");
+	canvas.style.position = "absolute";
+	canvas.style.left = "0px";
+	canvas.style.top = "0px";
+	canvas.width = 1366;
+	canvas.height = 768;
+	//canvas.style.border = "1px #000 solid";
+	document.body.appendChild(canvas);
+	let hand = 0;
+	ctx.font = "15px monospace";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.beginPath();
+	ctx.fillStyle = "#000";
+	ctx.fillText("Start", canvas.width / 2, canvas.height / 2);
+	ctx.closePath();
+	ctx.textAlign = "left";
+	let isRunning = false;
+	let dragging = false;
+	let room = {
+		width: 16,
+		height: 16,
+		data: [],
+		current: 0,
+		pathData: [],
+		spawnTimer: 0,
+		time: 0
+	};
+	let rooms = [["\
+[][][][][][][][][][][][][][][][]\
+[]                            []\
+[]  XX                        []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[][][][][][][][][][][][][]    []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]      [][][][][][][][][][][][]\
+[]                      ------[]\
+[]                      ------[]\
+[]                      ------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 20], ["\
+[][][][][][][][][][][][][][][][]\
+[]                            []\
+[]  XX                        []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                            []\
+[]                [][][][][][][]\
+[]                      ------[]\
+[]                      ------[]\
+[]                      ------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 10], ["\
+[][][][][][][][][][][][][][][][]\
+[]      []--------------------[]\
+[]  XX  []--------------------[]\
+[]      []--------------[][][][]\
+[]      []------------[][]----[]\
+[]      []    --------[]------[]\
+[]              ------[]------[]\
+[]              ------[]------[]\
+[]            []------[]--[][][]\
+[]            []------[]------[]\
+[]            [][]----[]------[]\
+[][][][][][][][]------[][]----[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 10], ["\
+[][][][][][][][][][][][][][][][]\
+[]------[]--------------    XX[]\
+[]------[]--------------      []\
+[]------[]------[]------      []\
+[]--------------[]------------[]\
+[]----------------------------[]\
+[]      []------------[][][][][]\
+[]      []------------[]------[]\
+[]      []    --------[]------[]\
+[]              --------------[]\
+[]              ------[]------[]\
+[]    XX      []------[]------[]\
+[]            []------[]------[]\
+[]            [][][]--[]------[]\
+[]          ------------------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 10], ["\
+[][][][][][][][][][][][][][][][][][][][]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]----------[][][][][][][][]----------[]\
+[]----------[]------------------------[]\
+[]----------[]------------------------[]\
+[]----------[]------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]------------------------------------[]\
+[]--------------[][][][][][]          []\
+[]--------------[]                    []\
+[]--------------[]XX                  []\
+[]--------------[]                    []\
+[][][][][][][][][][][][][][][][][][][][]\
+	", 20, 20, 10], ["\
+[][][][][][][][][][][][][][][][][][][][]\
+[]        --------------[]          --[]\
+[]          ------------[]            []\
+[]            ----------[]            []\
+[]              --------[]            []\
+[]            []--------[]--          []\
+[]  XX        []----------            []\
+[]            []--------[]            []\
+[]            []--------[]            []\
+[]            []--------[]          --[]\
+[]            []--------      --      []\
+[]            []--------              []\
+[]            []--------              []\
+[]                                    []\
+[]                                    []\
+[]      --                [][][][][][][]\
+[]                --            ------[]\
+[]                              ------[]\
+[]                              ------[]\
+[][][][][][][][][][][][][][][][][][][][]\
+	", 20, 20, 10], ["\
+[][][][][][][][][][][][][][][][]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]------[]      --------------[]\
+[]------[]      --------------[]\
+[]------[]XX    --------------[]\
+[]------[][][][]--[][][][]----[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[]----------------------------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 5], ["\
+[][][][][][][][][][][][][][][][]\
+[]----------------------------[]\
+[]------------------[]--------[]\
+[]------------------[]--------[]\
+[]--------          [][]------[]\
+[][][][][]              ------[]\
+[]          XX    XX    ------[]\
+[]                      ------[]\
+[]                      ------[]\
+[]          XX    XX    ------[]\
+[][][][][]              ------[]\
+[]--------        [][]--------[]\
+[]------------------[]--------[]\
+[]------------------[]--------[]\
+[]----------------------------[]\
+[][][][][][][][][][][][][][][][]\
+	", 16, 16, 20], ["\
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]--------------------------        --------------------------[]\
+[]--------------------------  XXXX  --------------------------[]\
+[]--------------------------  XXXX  --------------------------[]\
+[]--------------------------        --------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[]------------------------------------------------------------[]\
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+	", 32, 32, 5]];
+	let handUnlocked = 0;
+	room.data.length = room.width * room.height;
+	room.data.fill(0);
+	let hasPlacedAll = false;
+	let metal = 48;
+	let turretCost = 6;
+	let bounceCost = 8;
+	let bombCost = 20;
+	let enemyReward = 2;
+	let randomCost = 3;
+	let ents = [];
+	let projectiles = [];
+	let explosions = [];
+	let dispensers = [];
+	let turrets = [];
+	let endPoints = [];
+	function Enemy(type, x, y, speed, health) {
+		this.type = type;
+		this.x = x;
+		this.y = y;
+		let coords = [];
+		for (let i = 0; i < endPoints.length; i++) {
+		    coords.push(endPoints[i].x);
+		    coords.push(endPoints[i].y);
+		}
+		for (let i = 0; i < turrets.length; i++) {
+		    coords.push(turrets[i].x);
+		    coords.push(turrets[i].y);
+		}
+		let index = ((Math.random() * coords.length) >> 1) * 2;
+		this.destX = Math.floor(coords[index]);
+		this.destY = Math.floor(coords[index + 1]);
+		this.pathData = [];
+		this.pathData.length = room.data.length;
+		this.speed = speed;
+		this.health = health;
+	}
+	function Projectile(x, y, r, dx, dy, ricochets, damage) {
+		this.r = r;
+		this.x = x;
+		this.y = y;
+		this.vx = dx;
+		this.vy = dy;
+		this.ricochets = ricochets;
+		this.damage = damage;
+	}
+	function Explosion(x, y, r) {
+		this.x = x;
+		this.y = y;
+		this.r = r;
+		this.t = 0;
+	}
+	function Turret(x, y, cooldown, speed, ricochets, damage, health) {
+		this.coolMax = cooldown;
+		this.cooldown = cooldown;
+		this.x = x;
+		this.y = y;
+		this.v = speed;
+		this.ricochets = ricochets;
+		this.damage = damage;
+		this.health = health;
+	}
+	function End(x, y, health) {
+		this.x = x;
+		this.y = y;
+		this.health = health;
+	}
+	function setRoom(arr) {
+		ents = [];
+		turrets = [];
+		metal = 48;
+		hasPlacedAll = false;
+		projectiles = [];
+		explosions = [];
+		endPoints = [];
+		hand = 0;
+		let str = arr[0];
+		room.spawnTimer = 0;
+		room.time = 0;
+		room.width = arr[1];
+		room.height = arr[2];
+		room.data.length = arr[1] * arr[2];
+		room.pathData.length = arr[1] * arr[2];
+		handUnlocked = room.current < 2 ? 0 : room.current < 4 ? 1 : room.current < 8 ? 2 : 3;
+		for (let i = 0; i < str.length; i += 2) {
+			switch (str.slice(i, i + 2)) {
+			case "[]":
+				room.data[i / 2] = 0;
+				break;
+			case "--":
+				room.data[i / 2] = 1;
+				break;
+			case "  ":
+				room.data[i / 2] = 2;
+				break;
+			case "XX":
+				room.data[i / 2] = 2;
+				endPoints.push(new End((i / 2) % room.width, Math.floor(i / 2 / room.width), 1));
+				break;
+			case "<>":
+				room.data[i / 2] = 4;
+			}
+		}
+		findGlobalPath();
+	}
+	setRoom(rooms[room.current]);
+	function gameClick(x, y) {
+		switch (hand) {
+		case 0:
+			if (room.data[Math.floor(x) + room.width * Math.floor(y)] == 2 && metal - turretCost >= 0) {
+				metal -= turretCost;
+				turrets.push(new Turret (Math.floor(x) + 0.5, Math.floor(y) + 0.5, 50, 0.2, 0, 50, 200));
+			}
+			break;
+		case 1:
+			if (metal >= bombCost) {
+				x = Math.floor(x);
+				y = Math.floor(y);
+				let r = 2.5;
+				for (let i = Math.max(y - 2, 1); i <= Math.min(y + 2, room.width - 2); i++) {
+					for (let j = Math.max(x - 2, 1); j <= Math.min(x + 2, room.width - 2); j++) {
+						if ((i - y) ** 2 + (j - x) ** 2 < r * r) {
+							room.data[room.width * i + j] = 2;
+						}
+					}
+				}
+				for (let i = 0; i < ents.length; i++) {
+					if ((x + 0.5 - ents[i].x) ** 2 + (x + 0.5 - ents[i].x) ** 2 < (r + 1) ** 2) {
+						ents.splice(i, 1);
+						i--;
+					}
+				}
+				metal -= bombCost;
+				explosions.push(new Explosion(x, y, r));
+			}
+			break;
+		case 2:
+			if (room.data[Math.floor(x) + room.width * Math.floor(y)] == 2 && metal >= bounceCost) {
+				metal -= bounceCost;
+				turrets.push(new Turret (Math.floor(x) + 0.5, Math.floor(y) + 0.5, 50, 0.2, 1, 50, 200));
+			}
+			break;
+		case 3:
+			dragging = [x, y];
+			break;
+		case 4:
+			if (room.data[Math.floor(x) + room.width * Math.floor(y)] == 2 && metal >= randomCost) {
+				metal -= randomCost;
+				turrets.push(new Turret (Math.floor(x) + 0.5, Math.floor(y) + 0.5, 50, 0.2, 2, 50, 200));
+			}
+			break;
+		}
+	}
+	function handleClick(x, y) {
+		if (!isRunning)
+			return;
+		let cl_len = canvas.height / room.height;
+		if (x < cl_len * room.width) {
+			gameClick(Math.floor(x / cl_len), Math.floor(y / cl_len));
+			return;
+		}
+		hand = Math.floor((x - cl_len * room.width) / 100) + 3 * Math.floor((canvas.height - y) / 100);
+		console.log(hand);
+	}
+	function mouseDownHandler(clientX, clientY) {
+		start();
+		mouseDownHandler = function(clientX, clientY) {
+			handleClick(
+clientX, clientY);
+		}
+	}
+	canvas.onmousedown = function(e) {
+                e.preventDefault();
+		mouseDownHandler(e.clientX, e.clientY);
+	}
+	let ongoingTouch = [];
+	canvas.addEventListener("touchstart", function(e) {
+e.preventDefault();
+		ongoingTouch = [e.touches[0].pageX, e.touches[0].pageY];
+		mouseDownHandler(ongoingTouch[0], ongoingTouch[1]);
+	});
+	
+	canvas.addEventListener("touchmove", function(e) {
+e.preventDefault();
+		ongoingTouch = [e.touches[0].pageX, e.touches[0].pageY];
+	});
+	
+	function mouseUpHandler(clientX, clientY) {
+		if (!isRunning)
+			return;
+		let cl_len = canvas.height / room.height;
+		if (clientX < cl_len * room.width && hand == 3) {
+			let x = Math.floor(clientX / cl_len);
+			let y = Math.floor(clientY / cl_len);
+			if (room.data[y * room.width + x] == 2) {
+				for (let i = 0; i < turrets.length; i++) {
+					if (Math.abs(turrets[i].x - dragging[0] - 0.5) < 0.5 && Math.abs(turrets[i].y - dragging[1] - 0.5) < 0.5) {
+						turrets[i].x = x + 0.5;
+						turrets[i].y = y + 0.5;
+					}
+				}
+			}
+			dragging = false;
+		}
+	}
+	canvas.onmouseup = function(e) {
+e.preventDefault();
+		mouseUpHandler(e.pageX, e.pageY);
+	}
+	canvas.addEventListener("touchend", function(e) {
+e.preventDefault();
+		mouseUpHandler(ongoingTouch[0], ongoingTouch[1]);
+	});
+	function findPathFromArray() {
+		let updates = [];
+		for (let i = 0; i < room.pathData.length; i++) {
+			if (room.pathData[i] != room.data.length)
+				updates.push(i);
+		}
+		let dirs = [-room.width, -1, 1, room.width];
+		for (let w = 0; w < room.data.length; w++) {
+			for (let update = 0; update < updates.length; update++) {
+				let newpos;
+				let curpos = updates[update];
+				for (let k = 0; k < 4; k++) {
+					newpos = curpos + dirs[k];
+					if (room.data[newpos] == 0 || room.pathData[newpos] != room.data.length) {
+						continue;
+					}
+					room.pathData[newpos] = Math.min(room.pathData[curpos] + 1, room.pathData[newpos]);
+					updates.push(newpos);
+				}
+			}
+		}
+		return room.pathData.slice();
+	}
+	function findGlobalPath() {
+		room.pathData.fill(room.data.length);
+		for (let i = 0; i < room.width * room.height; i++) {
+			if (room.data[i] == 2) {
+				room.pathData[i] = 0;
+			}
+		}
+		let spaceArr = findPathFromArray();
+		
+		
+		room.pathData.fill(room.data.length);
+		for (let i = 0; i < turrets.length; i++) {
+			room.pathData[Math.floor(turrets[i].x) + room.width * Math.floor(turrets[i].y)] = 0;
+		}
+		let turretArr = findPathFromArray();
+		
+		
+		room.pathData.fill(room.data.length);
+		for (let i = 0; i < endPoints.length; i++) {
+			room.pathData[Math.floor(endPoints[i].x) + room.width * Math.floor(endPoints[i].y)] = 0;
+		}
+		let endArr = findPathFromArray();
+		
+		
+		for (let i = 0; i < room.data.length; i++) {
+			room.pathData[i] = spaceArr[i] + 5 * turretArr[i] + 5 * endArr[i];
+		}
+	}
+	let currentStepFunction;
+	let wonTime = 0;
+	function winStep() {
+		let cl_len = canvas.height / room.height;
+		ctx.beginPath();
+		ctx.fillStyle = "#fff";
+		ctx.fillRect(cl_len * room.width, 0, canvas.width - cl_len * room.width, canvas.height);
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.fillText("You completed the level.", cl_len * room.width + 50, canvas.height / 2);
+		ctx.closePath();
+		if (wonTime++ > 100) {
+			clearInterval(currentStepFunction);
+			isRunning = true;
+			currentStepFunction = setInterval(gameStep, 43);
+			wonTime = 0;
+		}
+	}
+	let gameInterval;
+	function gameStep() {
+		console.log(dragging);
+		if (metal < 48) {
+			hasPlacedAll = true;
+		}
+		findGlobalPath();
+		let blackSquares = [];
+		for (let i = 0; i < room.data.length; i++) {
+			if (room.data[i] == 1) {
+				blackSquares.push(i);
+			}
+		}
+		if (!blackSquares.length) {
+			isRunning = false;
+			if (++room.current < rooms.length) {
+				clearInterval(currentStepFunction);
+				currentStepFunction = setInterval(winStep, 43); //heeeeeeeeeeeeeeeeeeeeeere
+				setRoom(rooms[room.current]);
+			}
+			else {
+				ctx.beginPath();
+				ctx.fillStyle = "#000";
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ctx.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = "#fff";
+				ctx.fillText("You won.", canvas.width / 2, canvas.height / 2);
+				ctx.closePath();
+				clearInterval(currentStepFunction);
+				return;
+			}
+		}
+		else if (hasPlacedAll && room.spawnTimer++ > rooms[room.current][3]) { // trick where it won't evaluate if !hasPlacedAll
+			room.spawnTimer -= rooms[room.current][3];
+			let rand = Math.floor(Math.random() * blackSquares.length);
+			ents.push(new Enemy(0, (blackSquares[rand] % room.width) + 0.5, Math.floor(blackSquares[rand] / room.width) + 0.5, 0.05, 50));
+			//findPathForEnemy(ents[ents.length - 1]);
+		}
+		for (let i = 0; i < ents.length; i++) {
+			room.data[Math.floor(ents[i].x) + room.width * Math.floor(ents[i].y)] = 1;
+			
+			
+			let j = Math.floor(ents[i].x) + room.width * Math.floor(ents[i].y);
+			let nums = [j + 1, j + room.width, j - 1, j - room.width];
+			let min;
+			let mindexes = [];
+			for (let k = 0; k < 4; k++) {
+				min = min <= room.pathData[nums[k]] ? min : room.pathData[nums[k]];
+			}
+			for (let k = 0; k < 4; k++) {
+				if (room.pathData[nums[k]] == min) {
+					mindexes.push(k);
+				}
+			}
+			let dir = mindexes[Math.floor(Math.random() * mindexes.length)];
+			ents[i].x += ents[i].speed * Math.cos(dir * Math.PI / 2);
+			ents[i].y += ents[i].speed * Math.sin(dir * Math.PI / 2);
+			
+			
+			for (let j = 0; j < turrets.length; j++) {
+				if (Math.abs(turrets[j].x - ents[i].x) + Math.abs(turrets[j].y - ents[i].y) < 1) {
+					turrets.splice(j, 1);
+					break;
+				}
+			}
+			for (let j = 0; j < endPoints.length; j++) {
+				if (Math.abs(endPoints[j].x - ents[i].x + 0.5) ** 2 + Math.abs(endPoints[j].y - ents[i].y + 0.5) ** 2 < 1.5) {
+					setRoom(rooms[room.current]);
+					break;
+				}
+			}
+		}
+		for (let i = 0; i < turrets.length; i++) {
+			turrets[i].cooldown++;
+			if (turrets[i].ricochets == 2) {
+				if (turrets[i].cooldown > turrets[i].coolMax) {
+					let direction = 2 * Math.random() * Math.PI;
+					projectiles.push(new Projectile(turrets[i].x, turrets[i].y, 0.5, Math.cos(direction) * turrets[i].v, Math.sin(direction) * turrets[i].v, 2, 25));
+					turrets[i].cooldown = 0;
+				}
+				continue;
+			}
+			if (turrets[i].cooldown < turrets[i].coolMax) // if have not reached max yet
+				continue;
+			turrets[i].cooldown = 0;
+			if (ents.length > 0) {
+				let minDistance = room.width + room.height;
+				let closest = 0;
+				for (let j = 0; j < ents.length; j++) {
+					let d = Math.abs(turrets[i].x - ents[j].x) + Math.abs(turrets[i].y - ents[j].y);
+					// taxicab distance, that's what enemies walk
+					if (d < minDistance) {
+					    closest = j;
+						minDistance = d;
+					}
+				}
+				let dx = ents[closest].x - turrets[i].x;
+				let dy = ents[closest].y - turrets[i].y;
+				let scale = turrets[i].v / Math.sqrt(dx * dx + dy * dy);
+				projectiles.push(new Projectile(turrets[i].x, turrets[i].y, 0.5, dx * scale, dy * scale, turrets[i].ricochets, 25));
+			}
+			else {
+				//projectiles.push(new Projectile(turrets[i].x, turrets[i].y, 0.5,          0,          0.05, 1, 200));
+				// planned metal thing
+			}
+		}
+		projectileLoop:
+		for (let i = 0; i < projectiles.length; i++) {
+			projectiles[i].x += projectiles[i].vx;
+			projectiles[i].y += projectiles[i].vy;
+			switch (room.data[Math.floor(projectiles[i].x) + room.width * Math.floor(projectiles[i].y)]) {
+			case 0:
+				if (projectiles[i].ricochets-- <= 0) {
+					projectiles.splice(i, 1);
+					i--;
+					continue projectileLoop;
+				}
+				// bounce...
+				let tleft = (projectiles[i].x - Math.floor(projectiles[i].x)) / projectiles[i].vx;
+				let tup = (projectiles[i].y - Math.floor(projectiles[i].y)) / projectiles[i].vy;
+				let tright = (projectiles[i].x - Math.ceil(projectiles[i].x)) / projectiles[i].vx;
+				let tdown = (projectiles[i].y - Math.ceil(projectiles[i].y)) / projectiles[i].vy;
+				let twall = Math.max(tleft, tright);
+				let tflat = Math.max(tup, tdown);
+				projectiles[i].x -= projectiles[i].vx;
+				projectiles[i].y -= projectiles[i].vy;
+				if (twall < tflat) {
+					projectiles[i].vx *= -1;
+				}
+				else {
+					projectiles[i].vy *= -1;
+				}
+				break;
+			case 1:
+				room.data[Math.floor(projectiles[i].x) + room.width * Math.floor(projectiles[i].y)] = 2;
+				break;
+			}
+			for (let j = 0; j < ents.length; j++) {
+				//console.log(j, i);
+				if ((ents[j].x - projectiles[i].x) ** 2 + (ents[j].y - projectiles[i].y) ** 2 < 1) {
+					//console.log(ents[j].health, projectiles[i].damage);
+					ents[j].health -= projectiles[i].damage;
+					//console.log(ents[j].health);
+					metal += enemyReward;
+					if (ents[j].health <= 0) {
+						ents.splice(j, 1);
+					}
+					projectiles.splice(i, 1);
+					break;
+				}
+			}
+		}
+		for (let i = 0; i < explosions.length; i++) {
+			if (explosions[i].t++ > 10) {
+				explosions.splice(i, 1);
+				i--;
+			}
+		}
+		
+		
+		
+		let cl_len = canvas.height / room.height; // begin drawing
+		ctx.beginPath();
+		ctx.fillStyle = "#fff";
+		ctx.fillRect(cl_len * room.width, 0, canvas.width - cl_len * room.width, canvas.height);
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		let textHeight = 0;
+		ctx.fillText("Things: " + metal, cl_len * room.width, textHeight += 30);
+		switch (room.current) {
+		case 0:
+			ctx.fillText("Tap the white space to put turrets down.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("They stack, you can put lots on one tile.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("This costs 6 things.  Each enemy takes 2", cl_len * room.width, textHeight += 30);
+			ctx.fillText("hits to kill, and rewards 2 things.  Don't", cl_len * room.width, textHeight += 30);
+			ctx.fillText("let the enemies get to the blue square.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("Projectiles make black squares white.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("Enemies turn white squares black.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("To win, turn all black areas white.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("The wave will start after you put a", cl_len * room.width, textHeight += 30);
+			ctx.fillText("turret down.", cl_len * room.width, textHeight += 30);
+			break;
+		case 1:
+			ctx.fillText("It's perfectly fine if you fail,", cl_len * room.width, textHeight += 30);
+			ctx.fillText("the level will reset instantly.", cl_len * room.width, textHeight += 30);
+			break;
+		case 2:
+			ctx.fillText("You got a new item!  Tap on the grey", cl_len * room.width, textHeight += 30);
+			ctx.fillText("box below to switch to the disrupter.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("It can be used to get rid of lots of close", cl_len * room.width, textHeight += 30);
+			ctx.fillText("enemies and break down walls.", cl_len * room.width, textHeight += 30);
+			break;
+		case 4:
+			ctx.fillText("You have a new item: the bounce turret.", cl_len * room.width, textHeight += 30);
+			ctx.fillText("Its projectiles ricochet once.", cl_len * room.width, textHeight += 30);
+			break;
+		}
+		ctx.closePath();
+			
+		for (let i = 0; i < room.data.length; i++) {
+			let x = i % room.width;
+			let y = Math.floor(i / room.width);
+			let cl_x = cl_len * x;
+			let cl_y = cl_len * y;
+			switch (room.data[i]) {
+			case 0:
+				ctx.beginPath();
+				ctx.fillStyle = "#777";
+				ctx.fillRect(cl_x, cl_y, cl_len, cl_len);
+				ctx.closePath();
+				break;
+			case 1:
+				ctx.beginPath();
+				ctx.fillStyle = "#000";
+				ctx.fillRect(cl_x, cl_y, cl_len, cl_len);
+				ctx.closePath();
+				break;
+			case 2:
+				ctx.beginPath();
+				ctx.fillStyle = "#fff";
+				ctx.fillRect(cl_x, cl_y, cl_len, cl_len);
+				ctx.closePath();
+				break;
+			case 3:
+				ctx.beginPath();
+				ctx.fillStyle = "#aaf";
+				ctx.fillRect(cl_x, cl_y, cl_len, cl_len);
+				ctx.closePath();
+				break;
+			case 4:
+				ctx.beginPath();
+				ctx.fillStyle = "#afa";
+				ctx.fillRect(cl_x, cl_y, cl_len, cl_len);
+				ctx.closePath();
+			}
+		}
+		for (let i = 0; i < endPoints.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "#aaf";
+			ctx.fillRect(cl_len * endPoints[i].x, cl_len * endPoints[i].y, cl_len, cl_len);
+			ctx.closePath();
+		}
+		for (let i = 0; i < turrets.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = ["rgba(85,85,170,0.5)", "rgba(85,170,85,0.5)", "rgba(170,85,0,0.5)"][turrets[i].ricochets];
+			ctx.fillRect(cl_len * (turrets[i].x - 1 / 4), cl_len * (turrets[i].y - 1 / 4), cl_len / 2, cl_len / 2);
+			ctx.closePath();
+		}
+		for (let i = 0; i < explosions.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "#aaa";
+			ctx.arc(cl_len * explosions[i].x, cl_len * explosions[i].y, cl_len * explosions[i].r * (explosions[i].t + 5) / 15, 0, 2 * Math.PI);
+			ctx.fill();
+			ctx.closePath();
+		}
+		for (let i = 0; i < projectiles.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "#555";
+			ctx.arc(cl_len * projectiles[i].x, cl_len * projectiles[i].y, cl_len * 0.2, 0, 2 * Math.PI);
+			ctx.fill();
+			ctx.closePath();
+		}
+		for (let i = 0; i < ents.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "#a53";
+			ctx.fillRect(cl_len * (ents[i].x - 1 / 4), cl_len * (ents[i].y - 1 / 4), cl_len / 2, cl_len / 2);
+			ctx.closePath();
+		}
+		if (dragging) {
+			ctx.beginPath();
+			ctx.fillStyle = "#f00";
+			ctx.fillRect(cl_len * dragging[0], cl_len * dragging[1], cl_len, cl_len);
+			ctx.closePath();
+		}
+		ctx.lineWidth = 4;
+		let metalClH = 10;
+		let guih = 20;
+		switch (handUnlocked) {
+		case 3:
+			ctx.beginPath();
+			ctx.fillStyle = metal >= randomCost ? "#a50" : "#500";
+			ctx.rect(room.width * cl_len + 100, canvas.height - 200, 100, 100);
+			ctx.fill();
+			if (hand == 4) {
+				ctx.stroke();
+			}
+			ctx.fillRect(room.width * cl_len + 490, canvas.height - guih, 10, -randomCost * metalClH);
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.fillStyle = "#000";
+			ctx.fillText("Random: -" + randomCost, room.width * cl_len + 110, canvas.height - 130);
+			ctx.closePath();
+		case 2:
+			ctx.beginPath();
+			ctx.fillStyle = metal >= bounceCost ? "#5a5" : "#252";
+			ctx.rect(room.width * cl_len + 200, canvas.height, 100, -100);
+			ctx.fill();
+			if (hand == 2) {
+				ctx.stroke();
+			}
+			ctx.fillRect(room.width * cl_len + 480, canvas.height - guih, 10, -bounceCost * metalClH);
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.fillStyle = "#000";
+			ctx.fillText("Bouncy: -" + bounceCost, room.width * cl_len + 210, canvas.height - 30);
+			ctx.closePath();
+		case 1:
+			ctx.beginPath();
+			ctx.fillStyle = metal >= bombCost ? "#aaa" : "#555";
+			ctx.rect(room.width * cl_len + 100, canvas.height, 100, -100);
+			ctx.fill();
+			if (hand == 1) {
+				ctx.stroke();
+			}
+			ctx.fillRect(room.width * cl_len + 470, canvas.height - guih, 10, -bombCost * metalClH);
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.fillStyle = "#000";
+			ctx.fillText("Bomb: -" + bombCost, room.width * cl_len + 110, canvas.height - 30);
+			ctx.closePath();
+		case 0:
+			ctx.beginPath();
+			ctx.fillStyle = metal >= turretCost ? "#55a" : "#225";
+			ctx.rect(room.width * cl_len, canvas.height, 100, -100);
+			ctx.fill();
+			if (hand == 0) {
+				ctx.stroke();
+			}
+			ctx.fillRect(room.width * cl_len + 460, canvas.height - guih, 10, -turretCost * metalClH);
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.fillStyle = "#000";
+			ctx.fillText("Turret: -" + turretCost, room.width * cl_len + 10, canvas.height - 30);
+			ctx.closePath();
+			
+			ctx.beginPath();
+			ctx.fillStyle = "#f00";
+			ctx.rect(room.width * cl_len, canvas.height - 200, 100, 100);
+			ctx.fill();
+			if (hand == 3) {
+				ctx.stroke();
+			}
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.fillStyle = "#000";
+			ctx.fillText("Move Tool", room.width * cl_len + 10, canvas.height - 130);
+			ctx.closePath();
+		}
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.fillRect(room.width * cl_len + 360, canvas.height - guih, 100, -metal * 10);
+		if (room.current == 2 && room.time > 200) {
+			let heightOffset = 5 * Math.sin(room.time / 20);
+			let xof = 0;
+			ctx.fillText("  Click here to", room.width * cl_len + 100, canvas.height - 170 + heightOffset);
+			ctx.fillText(" select the bomb.", room.width * cl_len + 100, canvas.height - 150 + heightOffset);
+			ctx.fillRect(room.width * cl_len + 170 + xof, canvas.height - 130 + heightOffset, 5, 15);
+			ctx.moveTo(room.width * cl_len + 165 + xof, canvas.height - 115 + heightOffset, 5, 15);
+			ctx.lineTo(room.width * cl_len + 180 + xof, canvas.height - 115 + heightOffset, 5, 15);
+			ctx.lineTo(room.width * cl_len + 172.5 + xof, canvas.height - 100 + heightOffset, 5, 15);
+			ctx.fill();
+		}
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.fillStyle = "#a53";
+		ctx.fillRect(room.width * cl_len + 350, canvas.height - guih, 10, -2 * metalClH);
+		ctx.closePath();
+		
+		if (0) { // show pathfinding
+			for (let i = 0; i < room.data.length; i++) {
+				let x = i % room.width;
+				let y = Math.floor(i / room.width);
+				let cl_x = cl_len * x;
+				let cl_y = cl_len * y;
+				ctx.beginPath();
+				ctx.fillStyle = "#0ff";
+				ctx.fillText(room.pathData[i], cl_x, cl_y + 12);
+				ctx.closePath();
+			}
+		}
+		room.time++;
+		return;
+	}
+	function step() {
+		gameStep();
+	}
+	function start() {
+		isRunning = true;
+		currentStepFunction = setInterval(gameStep, 43);
+	}
+})();
+		</script>
+	</body>
+</html>
