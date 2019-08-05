@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+
+/*let audio0 = document.createElement("audio");
+audio0.loop = true;
+audio0.src = "music_always.wav";
+let audio1 = document.createElement("audio");
+audio1.volume = 0;
+audio1.loop = true;
+setTimeout(function() {
+	audio0.play();
+	audio1.play();
+}, 10000);
+audio1.src = "music_win.wav";*/
+let canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
+let ctx = canvas.getContext("2d");
+canvas.width = 1366;
+canvas.height = 768;
+canvas.style = "position: absolute; left: 0px; top: 0px;";
+let keys = [];
+for (let i = 0; i < 27; i++) {
+	keys["abcdefghijklmnopqrstuvwxyz "[i]] = 0;
+}
+// tile size is 8 px
+let animTime = 0;
+let global = {
+	tileSize: 8, // px
+	roomX: 0, // px, room offset left
+	roomY: 0, // px, room offset top
+	loadDist: 20
+};
+let room = {
+	width: 128, // tl
+	hidth: 96, // tl
+	data: [],
+	eyeX: Math.random() * 128,
+	eyeY: Math.random() * 96
+};
+for (let i = 0; i < room.hidth; i++) {
+	room.data[i] = [];
+	for (let j = 0; j < room.width; j++) {
+		room.data[i][j] = 0;//(Math.random() < .01) + 0;
+	} 
+}
+for (let i = 0; i < room.hidth; i++) {
+	room.data[i][0] = 1;
+	room.data[i][room.width - 1] = 1;
+}
+for (let i = 0; i < room.width; i++) {
+	room.data[0][i] = 1;
+	room.data[room.hidth - 1][i] = 1;
+}
+function min(x, y) {
+	return x < y ? x : y;
+}
+function max(x, y) {
+	return x > y ? x : y;
+}
+function boxboxDE(px, py, pax, pay, bx, by, bax, bay) {
+	bax = bax || .5;
+	bay = bay || .5;
+	px = Math.abs(px - bx);
+	py = Math.abs(py - by);
+	bax += pax;
+	bay += pay;
+	let hde = px - bax;
+	let vde = py - bay;
+	return max(hde, vde);
+}
+function loadNewArea(oldX, oldY, newX, newY) {
+	
+	oldX = Math.floor(oldX);
+	oldY = Math.floor(oldY);
+	newX = Math.floor(newX);
+	newY = Math.floor(newY);
+	let d = global.loadDist;
+	let oldBoxes = [];
+	let oldLeft = max(oldX - d, 1);
+	let oldRight = min(oldX + d, room.width - 2);
+	let oldTop = max(oldY - d, 1);
+	let oldBottom = min(oldY + d, room.hidth - 2);
+	
+	let newBoxes = [];
+	let newLeft = max(newX - d, 1);
+	let newRight = min(newX + d, room.width - 2);
+	let newTop = max(newY - d, 1);
+	let newBottom = min(newY + d, room.hidth - 2);
+	
+	for (let y = oldTop; y <= oldBottom; y++) {
+		for (let x = oldLeft; x <= oldRight; x++) {
+			if (x >= newLeft && x <= newRight && y >= newTop && y <= newBottom) {
+				// both a new and old box
+			}
+			else {
+				oldBoxes.push([x, y]);
+			}
+		}
+	}
+	for (let y = newTop; y <= newBottom; y++) {
+		for (let x = newLeft; x <= newRight; x++) {
+			if (x >= oldLeft && x <= oldRight && y >= oldTop && y <= oldBottom) {
+				// both a new and old box
+			}
+			else {
+				newBoxes.push([x, y]);
+			}
+		}
+	}
+	for (let i = 0; i < oldBoxes.length; i++) {
+		room.data[oldBoxes[i][1]][oldBoxes[i][0]] = 0;
+	}
+	for (let i = newBoxes.length - 1; i >= 0; i--) {
+		let index = Math.floor(i * Math.random());
+		let box = [newBoxes[index][0], newBoxes[index][1]];
+		newBoxes[index] = newBoxes[i];
+		let sum
+		= room.data[box[1] - 1][box[0] - 1] * .5
+		+ room.data[box[1] - 1][box[0]    ]
+		+ room.data[box[1] - 1][box[0] + 1] * .5
+		+ room.data[box[1]    ][box[0] - 1]
+		+ room.data[box[1]    ][box[0] + 1]
+		+ room.data[box[1] + 1][box[0] - 1] * .5
+		+ room.data[box[1] + 1][box[0]    ]
+		+ room.data[box[1] + 1][box[0] + 1] * .5;
+		if (Math.random() < sum / 3 || Math.random() - .99 > sum) {
+			let rand = Math.random();
+			if (rand < .9) {
+				room.data[box[1]][box[0]] = 1;// + Math.floor(Math.random() * 1.1);
+			}
+			else if (rand < .95) {
+				room.data[box[1]][box[0]] = 2;
+			}
+			else {
+				room.data[box[1]][box[0]] = 3 + Math.floor(Math.random() * 3);
+			}
+		}
+	}
+}
+let greys = [];
+let gameLoop;
+function Grey(x, y, vx, vy) {
+	this.x = x;
+	this.y = y;
+	this.ax = .5;
+	this.ay = .5;
+	this.vx = vx;
+	this.vy = vy;
+	this.move = function() {
+		this.vx += .001 * (player.x - this.x);
+		this.vy += .001 * (player.y - this.y);
+		let v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+		this.vx /= v;
+		this.vy /= v;
+		this.x += this.vx * .05;
+		this.y += this.vy * .05;
+	}
+	this.draw = function() {
+		ctx.beginPath();
+		ctx.fillStyle = "#775";
+		ctx.fillRect((this.x - this.ax) * global.tileSize + global.roomX, (this.y - this.ay) * global.tileSize + global.roomY,
+			this.ax * 2 * global.tileSize, this.ay * 2 * global.tileSize);
+		ctx.closePath();
+	}
+	this.step = function() {
+		this.move();
+		this.draw();
+		if ((player.timeSinceAttacked >= 24 || player.attackType == "") && Math.abs(this.x - player.x) < this.ax + player.ax && Math.abs(this.y - player.y) < this.ay + player.ay) {
+			let invuln = false;
+			for (let i = 0; i < inventory.items.length; i++) {
+				if (inventory.items[i] == "blue") {
+					inventory.items[i] = "";
+					player.timeSinceAttacked = 0;
+					player.attackType = "blue";
+					invuln = true;
+					break;
+				}
+			}
+			if (!invuln) {
+				for (let i = 0; i < inventory.items.length; i++) {
+					if (inventory.items[i] == "green") {
+						inventory.items[i] = "";
+						player.timeSinceAttacked = 0;
+						player.attackType = "green";
+						invuln = true;
+						break;
+					}
+				}
+			}
+			if (!invuln) {
+				for (let i = 0; i < inventory.items.length; i++) {
+					if (inventory.items[i] == "red") {
+						inventory.items[i] = "";
+						player.timeSinceAttacked = 0;
+						player.attackType = "red";
+						invuln = true;
+						break;
+					}
+				}
+			}
+			if (!invuln) {
+				for (let i = 0; i < inventory.items.length; i++) {
+					if (inventory.items[i] == "eye") {
+						inventory.items[i] = "";
+						player.timeSinceAttacked = 0;
+						player.attackType = "eye";
+						invuln = true;
+						break;
+					}
+				}
+			}
+			if (!invuln) {
+				clearInterval(gameLoop);
+				animTime = 0;
+				gameloop = setInterval(dieStep, 1000/24);
+				//step = dieStep;
+			}
+		}
+	}
+}
+function spawnGreyPack(x, y) {
+	let r = 12;
+	for (let i = 0; i < 8; i++) {
+		let cos = Math.cos(i * Math.PI / 4);
+		let sin = Math.sin(i * Math.PI / 4);
+		greys.push(new Grey(r * cos + x, r * sin + y, cos, sin));
+	}
+}
+function Inventory() {
+	this.x = 0;
+	this.y = 0;
+	this.items = [];
+	for (let i = 0; i < 16; i++) {
+		this.items[i] = "";
+	}
+	this.draw = function() {
+		ctx.beginPath();
+		ctx.fillStyle = "#aaa";
+		ctx.fillRect(1024, 0, 342, 342);
+		ctx.closePath();
+		//1366 - 1024 = 342
+		// 2 + 83 + 2 + 83 + 2 + 83 + 2 + 83 + 2
+		for (let i = 1024; i < canvas.width; i += 85) {
+			ctx.beginPath();
+			ctx.fillStyle = "#555";
+			ctx.fillRect(i, 0, 2, 342);
+			ctx.closePath();
+		}
+		for (let i = 0; i < 5; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "#555";
+			ctx.fillRect(1024, i * 85, 342, 2);
+			ctx.closePath();
+		}
+		/*ctx.beginPath();
+		ctx.fillStyle = "#e88";
+		ctx.fillRect(3 * 85 + 1026, 3 * 85 + 2, 83, 83);
+		ctx.closePath();*/
+		ctx.beginPath();
+		ctx.fillStyle = "#ccc";
+		ctx.fillRect(this.x * 85 + 1026, this.y * 85 + 2, 83, 83);
+		ctx.closePath();
+		for (let i = 0; i < 16; i++) {
+			let x = i % 4;
+			let y = Math.floor(i / 4);
+			let offX = x * 85 + 1026;
+			let offY = y * 85 + 2;
+			ctx.beginPath();
+			if (this.items[i] == "red") {
+				ctx.fillStyle = "#f00";
+				ctx.fillRect(offX + 20, offY + 20, 43, 43);
+			}
+			else if (this.items[i] == "green") {
+				ctx.fillStyle = "#5a5";
+				ctx.fillRect(offX + 20, offY + 20, 43, 43);
+			}
+			else if (this.items[i] == "blue") {
+				ctx.fillStyle = "#55a";
+				ctx.fillRect(offX + 20, offY + 20, 43, 43);
+			}
+			else if (this.items[i] == "eye") {
+				ctx.fillStyle = "#375";
+				ctx.arc(offX + 83/2, offY + 83/2, 24, 0, 2 * Math.PI);
+				ctx.fill();
+			}
+			ctx.closePath();
+		}
+	}
+	this.put = function(thing) {
+		for (let i = 0; i < this.items.length; i++) {
+			if (this.items[i] == "") {
+				this.items[i] = thing;
+				break;
+			}
+		}
+	}
+	this.step = function() {
+		//this.items[15] = "";
+		this.draw();
+		let b = -2;
+		if (keys.j == b && this.x > 0) {
+			this.x--;
+		}
+		if (keys.k == b && this.y < 3) {
+			this.y++;
+		}
+		if (keys.l == b && this.x < 3) {
+			this.x++;
+		}
+		if (keys.i == b && this.y > 0) {
+			this.y--;
+		}
+	}
+}
+let inventory = new Inventory();
+function Player(startx, starty) {
+	this.x = startx;
+	this.y = starty;
+	this.ax = .9;
+	this.ay = .9;
+	this.vx = 0;
+	this.vy = 0;
+	this.timeSinceGround = 0;
+	this.timeSinceWall = 0;
+	this.timeSinceAttacked = 0;
+	this.attackType = ""; // red, blue, green, ender
+	this.move = function() {
+		let t = 0;
+		let maxSubStepDist = .1;
+		let v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+		let bx = this.x;
+		let by = this.y;
+		for (let i = 0; i < 100; i++) {
+			let done = 0;
+			let subStepTime = maxSubStepDist / v;
+			if (subStepTime + t >= 1) {
+				subStepTime = 1 - t;
+				done = 1;
+			}
+			t += subStepTime;
+			this.x += this.vx * subStepTime;
+			this.y += this.vy * subStepTime;
+			let de = [100, 100, 100, 100, 100]; // center, up, down, left, right
+			let ded = .1;
+			for (let y = Math.floor(this.y - this.ay); y <= Math.floor(this.y + this.ay); y++) {
+				for (let x = Math.floor(this.x - this.ax); x <= Math.floor(this.x + this.ax); x++) {
+					if (room.data[y][x] == 1) {
+						de[0] = min(boxboxDE(this.x, this.y, this.ax, this.ay, x + .5, y + .5), de[0]);
+						de[1] = min(boxboxDE(this.x, this.y - ded, this.ax, this.ay, x + .5, y + .5), de[1]);
+						de[2] = min(boxboxDE(this.x, this.y + ded, this.ax, this.ay, x + .5, y + .5), de[2]);
+						de[3] = min(boxboxDE(this.x - ded, this.y, this.ax, this.ay, x + .5, y + .5), de[3]);
+						de[4] = min(boxboxDE(this.x + ded, this.y, this.ax, this.ay, x + .5, y + .5), de[4]);
+					}
+					else if (room.data[y][x] == 2) {
+						spawnGreyPack(x + .5, y + .5);
+						room.data[y][x] = 0;
+					}
+					else if (room.data[y][x] >= 3) {
+						inventory.put(["red", "green", "blue"][room.data[y][x] - 3]);
+						room.data[y][x] = 0;
+					}
+				}
+			}
+			if (de[0] < 0) {
+				de[0] = -de[0];
+				let nmx = (de[4] - de[3]);
+				let nmy = (de[2] - de[1]);
+				let nmd = Math.sqrt(nmx * nmx + nmy * nmy);
+				this.x += nmx * de[0] / nmd;
+				this.y += nmy * de[0] / nmd;
+				if (Math.abs(nmx) > Math.abs(nmy)) {
+					this.timeSinceWall = 0;
+				}
+				else if (nmy < 0) {
+					this.timeSinceGround = 0;
+				}
+			}
+			if (done) {
+				break;
+			}
+		}
+		this.vx = this.x - bx;
+		this.vy = this.y - by;
+		loadNewArea(bx, by, this.x, this.y);
+	}
+	this.draw = function() {
+		ctx.beginPath();
+		if (this.attackType == "" || this.timeSinceAttacked >= 24) {
+			ctx.fillStyle = "#ffa";
+		}
+		else if (this.attackType == "red") {
+			ctx.fillStyle = "#a55";
+		}
+		else if (this.attackType == "green") {
+			ctx.fillStyle = "#5a5";
+		}
+		else if (this.attackType == "blue") {
+			ctx.fillStyle = "#55a";
+		}
+		else if (this.attackType == "eye") {
+			ctx.fillStyle = "#375";
+		}
+		ctx.fillRect((this.x - this.ax) * global.tileSize + global.roomX, (this.y - this.ay) * global.tileSize + global.roomY,
+			this.ax * 2 * global.tileSize, this.ay * 2 * global.tileSize);
+		ctx.closePath();
+	}
+	this.step = function() {
+		this.vy += .1;
+		if (this.timeSinceGround < 3) {
+			
+			this.vx *= .5;
+			this.vy *= .5;
+			if (keys.s < 0) {
+				this.vx -= .2;
+			}
+			if (keys.f < 0) {
+				this.vx += .2;
+			}
+			if (keys.e < 3) {
+				this.vy -= 1;
+				this.timeSinceGround = 3;
+			}
+		}
+		else if (this.timeSinceWall < 2) {
+			this.vx *= .5;
+			this.vy *= .5;
+			if (keys.s < 0) {
+				this.vx -= .2;
+			}
+			if (keys.f < 0) {
+				this.vx += .2;
+			}
+			if (keys.e < 3) {
+				this.vy -= .5;
+			}
+		}
+		else {
+			this.vx *= .9;
+			this.vy *= .9;
+			if (keys.s < 0) {
+				this.vx -= .1;
+			}
+			if (keys.f < 0) {
+				this.vx += .1;
+			}
+			if (keys.e < 0) {
+				this.vy -= .05;
+			}
+		}
+		this.timeSinceGround++;
+		this.timeSinceWall++;
+		this.timeSinceAttacked++;
+		if (keys[" "] < 1 && this.timeSinceAttacked > 24) {
+			let d = .8;
+			if (keys.e < 0) {
+				this.vy -= d;
+			}
+			if (keys.d < 0) {
+				this.vy += d;
+			}
+			if (keys.s < 0) {
+				this.vx -= d;
+			}
+			if (keys.f < 0) {
+				this.vx += d;
+			}
+			this.timeSinceAttacked = 0;
+			this.attackType = inventory.items[inventory.x + 4 * inventory.y];
+			inventory.items[inventory.x + 4 * inventory.y] = "";
+		}
+		if (this.timeSinceAttacked < 24) {
+			
+			if (this.attackType == "red") {
+				for (let i = 0; i < greys.length; i++) {
+					if (Math.abs(greys[i].x - this.x) < greys[i].ax + this.ax && Math.abs(greys[i].y - this.y) < greys[i].ay + this.ay) {
+						greys[i] = greys[greys.length - 1];
+						greys.pop();
+						inventory.put("eye");
+					}
+				}
+			}
+			if (this.attackType == "green" && this.timeSinceAttacked == 23) {
+				let y = Math.ceil(this.y + this.ay);
+				for (let x = Math.floor(this.x - this.ax); x < this.x + this.ax; x++) {
+					room.data[y][x] = 1;
+				}
+			}
+			if (this.attackType == "eye") {
+				this.vx = room.eyeX - this.x;
+				this.vy = room.eyeY - this.y;
+				let v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+				this.vx *= .1 / v;
+				this.vy *= .1 / v;
+				if (v < 5) {
+					clearInterval(gameLoop);
+					animTime = 0;
+					gameLoop = setInterval(winStep, 1000/24);
+				}
+			}
+		}
+		this.move();
+		this.draw();
+	}
+}
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.font = "30px monospace";
+let player = new Player(room.width / 2, room.hidth / 2);
+let paused;
+function gameStep() {
+	ctx.beginPath();
+	ctx.fillStyle = "#fa5";
+	ctx.fillRect(0, 0, global.tileSize * room.width, global.tileSize * room.hidth);
+	ctx.closePath();
+	player.step();
+	inventory.step();
+	for (let y = 0; y < room.hidth; y++) {
+		for (let x = 0; x < room.width; x++) {
+			if (room.data[y][x] > 0) {
+				ctx.beginPath();
+				ctx.fillStyle = ["#fa5", "#a50", "#775", "#f00", "#0f0", "#00f"][room.data[y][x]];
+				ctx.fillRect(x * global.tileSize + global.roomX, y * global.tileSize + global.roomY, global.tileSize, global.tileSize);
+				ctx.closePath();
+			}
+		}
+	}
+	ctx.beginPath();
+	ctx.fillStyle = "#fff";
+	ctx.fillRect(1024, 342, 342, 426);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#000";
+	ctx.fillText("Movement: ESDF", 1195, 500);
+	ctx.fillText("Inventory: IJKL", 1195, 555);
+	ctx.fillText("Use item: space", 1195, 610);
+	ctx.closePath();
+	for (let i = 0; i < greys.length; i++) {
+		greys[i].step();
+	}
+	for (let i = 0; i < 27; i++) {
+		if (keys["abcdefghijklmnopqrstuvwxyz "[i]] != -1) {
+			keys["abcdefghijklmnopqrstuvwxyz "[i]]++;
+		}
+	}
+}
+function winStep() {
+	if (animTime < 96) {
+		ctx.beginPath();
+		ctx.fillStyle = "rgba(255,255,255,.1)";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+	}
+	else if (animTime == 96) {
+		ctx.beginPath();
+		ctx.fillStyle = "#fff";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.font = "30px monospace";
+		ctx.fillText("You won.  Press space if you would like to restart.", canvas.width / 2, canvas.height / 2);
+		ctx.closePath();
+		//audio0.volume = 1 - animTime / 96;
+		//audio1.volume = animTime / 96;
+		paused = true;
+		clearInterval(gameLoop);
+	}
+	animTime++;
+}
+function dieStep() {
+	if (animTime < 96) {
+		ctx.beginPath();
+		ctx.fillStyle = "rgba(0,0,0,.1)";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+	}
+	else if (animTime == 96) {
+		ctx.beginPath();
+		ctx.fillStyle = "#000";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.fillStyle = "#fff";
+		ctx.font = "30px monospace";
+		ctx.fillText("You died.  Press space if you would like to restart.", canvas.width / 2, canvas.height / 2);
+		ctx.closePath();
+		paused = true;
+		clearInterval(gameLoop);
+	}
+	animTime++;
+}
+paused = false;
+gameLoop = setInterval(gameStep, 1000 / 24);
+function restart() {
+	paused = false;
+	gameLoop = setInterval(gameStep, 1000 / 24);
+	player = new Player(room.width / 2, room.hidth / 2);
+	inventory = new Inventory();
+	greys = [];
+	keys[" "] = 0;
+	room.eyeX = Math.random() * room.width;
+	room.eyeY = Math.random() * room.hidth;
+	for (let i = 0; i < room.hidth; i++) {
+		room.data[i] = [];
+		for (let j = 0; j < room.width; j++) {
+			room.data[i][j] = 0;//(Math.random() < .01) + 0;
+		} 
+	}
+	for (let i = 0; i < room.hidth; i++) {
+		room.data[i][0] = 1;
+		room.data[i][room.width - 1] = 1;
+	}
+	for (let i = 0; i < room.width; i++) {
+		room.data[0][i] = 1;
+		room.data[room.hidth - 1][i] = 1;
+	}
+	//audio0.volume = 1;
+	//audio1.volume = 0;
+}
+function pauseUnpause() {
+	if (paused) {
+		paused = false;
+		gameLoop = setInterval(gameStep, 1000/24);
+	}
+	else {
+		paused = true;
+		clearInterval(gameLoop);
+		ctx.beginPath();
+		ctx.fillStyle = "rgba(127,127,127,.5)";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+	}
+}
+function keyHandler(e, b) {
+	keys[e.key] = b;
+}
+addEventListener("keyup", function(e) {
+	if (e.key == "Escape") {
+		pauseUnpause();
+	}
+	else if (e.key == " " && paused) {
+		restart();
+	}
+	else {
+		keyHandler(e, 0);
+	}
+}, false);
+addEventListener("keydown", function(e) {
+	keyHandler(e, -2);
+}, false);
+		</script>
+	</body>
+</html>
