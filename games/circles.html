@@ -314,7 +314,7 @@ function Player(x, y, r, id) {
 		let time = 0;
 		let beforeX = this.x;
 		let beforeY = this.y;
-		while (true) { // this could be a problem area
+		for (let i = 0; i < 100; i++) { // this could be a problem area
 			if (time > 1) {
 				break;
 			}
