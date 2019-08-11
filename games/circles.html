@@ -310,9 +310,6 @@ function Player(x, y, r, id) {
 		vector: [0, 0]
 	}
 	this.move = function() {
-		if (this.vx == 0 && this.vy == 0) {
-			return;
-		}
 		let subStepDist = this.r / 10;
 		let time = 0;
 		let beforeX = this.x;
