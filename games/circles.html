@@ -12,9 +12,9 @@ let fullscreen = false;
 let fscEventTouch, fscEventMouse;
 function tryFullscreen() { // doesn't actually work, just thought I would try it
 	canvas.requestFullscreen();
-	screen.orientation.lock("landscape-primary"); // you'll get an error if the browser rejects it, but it's ok
 	removeEventListener("touchstart", fscEventTouch);
 	removeEventListener("mousedown", fscEventMouse);
+	screen.orientation.lock("landscape-primary"); // you'll get an error if the browser rejects it, but it's ok
 }
 fscEventTouch = canvas.addEventListener("touchstart", tryFullscreen);
 fscEventMouse = canvas.addEventListener("mousedown", tryFullscreen);
