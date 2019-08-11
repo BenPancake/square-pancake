@@ -11,10 +11,10 @@ canvas.style = "left: 0px; top: 0px; position: absolute;";
 let fullscreen = false;
 let fscEventTouch, fscEventMouse;
 function tryFullscreen() { // doesn't actually work, just thought I would try it
-	canvas.requestFullscreen();
+	//canvas.requestFullscreen();
 	//removeEventListener("touchstart", fscEventTouch); these don't actually work
 	//removeEventListener("mousedown", fscEventMouse); and I don't want them here anyway
-	screen.orientation.lock("landscape-primary"); // you'll get an error if the browser rejects it, but it's ok
+	//screen.orientation.lock("landscape-primary"); // you'll get an error if the browser rejects it, but it's ok
 }
 fscEventTouch = canvas.addEventListener("touchstart", tryFullscreen);
 fscEventMouse = canvas.addEventListener("mousedown", tryFullscreen);
@@ -328,13 +328,13 @@ function Player(x, y, r, id) {
 			if (time > 1) {
 				break;
 			}
-			let dt = subStepDist / Math.sqrt(this.vx ** 2 + this.vy ** 2);
+			let tv = Math.sqrt(this.vx ** 2 + this.vy ** 2);
+			let dt = tv == 0 ? 1 : subStepDist / tv;
 			if (time + dt > 1) {
 				dt = 1 - time;
 				time = 2;
 			}
 			time += dt;
-			
 			this.x += this.vx * dt;
 			this.y += this.vy * dt;
 			let distToGeom = DEfast(this.x, this.y) - this.r;
@@ -351,6 +351,9 @@ function Player(x, y, r, id) {
 					this.y -= norm[1] * distToGeom;
 				}
 				this.airTime = 0;
+				if (id == 1) {
+					console.log(norm, distToGeom, this.x, this.y);
+				}
 			}
 		}
 		this.vx = this.x - beforeX;
@@ -384,7 +387,6 @@ function Player(x, y, r, id) {
 			let boxcy = Math.floor((this.y - this.controls.vector[1] * 40) / boxGrid.ppu);
 			let boxcr = 20;
 			let boxcr2 = boxcr * boxcr;
-			console.log("aaaaah", max(0, boxcy - boxcr), min(boxGrid.height, boxcy + boxcr));
 			for (let y = max(0, boxcy - boxcr); y < min(boxGrid.height, boxcy + boxcr); y++) {
 				for (let x = max(0, boxcx - boxcr); x < min(boxGrid.width, boxcx + boxcr); x++) {
 					if ((x - boxcx) ** 2 + (y - boxcy) ** 2 < boxcr2 && (x - Math.floor(this.x / boxGrid.ppu)) ** 2 + (y - Math.floor(this.y / boxGrid.ppu)) ** 2 > boxcr2) {
@@ -618,6 +620,9 @@ function NMfast(px, py) {
 	let xvec = DEfast(px + d, py) - DEfast(px - d, py);
 	let yvec = DEfast(px, py + d) - DEfast(px, py - d);
 	d = Math.sqrt(xvec * xvec + yvec * yvec);
+	if (d == 0) {
+		return [0, 0];
+	}
 	return [xvec / d, yvec / d];
 }
 /*
@@ -718,7 +723,7 @@ function generalChangeHandler(list) {
 		players[i].keys.b += 4;
 		players[i].keys.c += 4;
 		players[i].keys.d += 4;*/
-		players[i].controls.vector = [0, 0];
+		players[i].controls.vector = [0, 0]; // IMPORTANT TO NOT COMMENT THIS IN A RELEASE VERSION
 	}
 	for (let touch of list) {
 		let cx = touch[0];
@@ -788,6 +793,28 @@ canvas.addEventListener("mouseup", function(e) {
 canvas.addEventListener("touchstart", actualTouchHandler, false); // e.preventDefault() won't work without the "canvas.".
 canvas.addEventListener("touchmove", actualTouchHandler, false);
 canvas.addEventListener("touchend", actualTouchHandler, false);
+function keyHandler(key, b) {
+	let p = 0;
+	if (key == "e") {
+		players[p].controls.vector[1] = -b;
+	}
+	if (key == "s") {
+		players[p].controls.vector[0] = -b;
+	}
+	if (key == "d") {
+		players[p].controls.vector[1] = b;
+	}
+	if (key == "f") {
+		players[p].controls.vector[0] = b;
+	}
+	//console.log(players[p].controls.vector);
+}
+addEventListener("keydown", function(e) {
+	keyHandler(e.key, 1);
+}, false);
+addEventListener("keyup", function(e) {
+	keyHandler(e.key, 0);
+}, false);
 		</script>
 	</body>
 </html>
