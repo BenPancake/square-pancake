@@ -21,16 +21,26 @@ fscEventMouse = canvas.addEventListener("mousedown", tryFullscreen);
 let global = {
 	timeSinceRoundStart: 0
 }
+function relu(x) {
+	return x <= 0 ? 0 : x;
+}
 function DEbox(px, py, bx, by, bw, bh) { // just a DE, remember?
 	px = px - bx - bw / 2;
 	py = py - by - bh / 2;
 	px = Math.abs(px);
 	py = Math.abs(py);
-	if (px > py) {
-		return px - bw / 2;
+	if (px <= 0 && py <= 0) {
+		if (px > py) {
+			return px - bw / 2;
+		}
+		else {
+			return py - bh / 2;
+		}
 	}
 	else {
-		return py - bh / 2;
+		px = relu(px - bw / 2);
+		py = relu(py - bh / 2);
+		return Math.sqrt(px * px + py * py);
 	}
 }
 let boxGrid = {
