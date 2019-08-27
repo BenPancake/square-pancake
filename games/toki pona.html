@@ -2106,8 +2106,9 @@ for (let p of ps) {
 */
 // https://www.reddit.com/r/tokipona/comments/crvvwp/practice_sentences/
 // https://xena.greedo.xeserv.us/articles/words.json
+
 let strs = `Huge thanks to the folks who I took the JSON and example sentences from.
-You're the best.  Use left and right to navigate the examples.
+You're the best.  Use left/a/s and right/d/f to navigate the examples.
 
 sina pona.
 You're good.
@@ -2388,17 +2389,22 @@ function drawText() {
 drawText();
 englishPre.style.backgroundColor = "#000";
 addEventListener("keydown", function(e) {
-	if (e.key == "ArrowLeft") {
+	if (e.key == "ArrowLeft" || e.key == "a" || e.key == "s") {
 		if (exampleIndex > 0) {
 			exampleIndex--;
 		}
+		englishPre.style.backgroundColor = "#000";
 	}
-	if (e.key == "ArrowRight") {
+	else if (e.key == "ArrowRight" || e.key == "d" || e.key == "f") {
 		if (exampleIndex < strs.length - 1) {
 			exampleIndex++;
 		}
+		englishPre.style.backgroundColor = "#000";
 	}
-	englishPre.style.backgroundColor = "#000";
+	else if (e.key == " ") {
+		englishPre.style.backgroundColor = "#fff";
+	}
+	//console.log(e.key);
 	drawText();
 }, false);
 
