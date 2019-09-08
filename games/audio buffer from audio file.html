@@ -15,7 +15,9 @@ let actx = new AudioContext();
 let arrayBuffer, audioBuffer;
 fileReader.addEventListener("loadend", function () {
 	arrayBuffer = fileReader.result;
-	actx.decodeAudioData(arrayBuffer, function(buf) {
+	actx.decodeAudioData(
+		arrayBuffer,
+		function(buf) {
 			audioBuffer = buf;
 		},
 		function(err) {
