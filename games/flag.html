@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+let canvas = document.createElement("canvas");
+let ctx = canvas.getContext("2d");
+document.body.appendChild(canvas);
+function starlight() {
+	let n = 100;
+	canvas.width = 8 * n;
+	canvas.height = 5 * n;
+	ctx.beginPath();
+	ctx.fillStyle = "#edbbf3";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#555";
+	ctx.fillRect(3 * n, 1 * n, 5 * n, n);
+	ctx.fillRect(0, 3 * n, canvas.width, n);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#622489";
+	ctx.fillRect(0, 0, 3 * n, 3 * n);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#ffffff";
+	ctx.moveTo(.5 * n, .5 * n);
+	ctx.lineTo(1.5 * n, 1 * n);
+	ctx.lineTo(2.5 * n, .5 * n);
+	ctx.lineTo(2 * n, 1.5 * n);
+	ctx.lineTo(2.5 * n, 2.5 * n);
+	ctx.lineTo(1.5 * n, 2 * n);
+	ctx.lineTo(.5 * n, 2.5 * n);
+	ctx.lineTo(1 * n, 1.5 * n);
+	ctx.fill();
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#a3a"; // 9eefd9 mint, 555 grey, a3a purple
+	ctx.moveTo(.25 * n, 1.5 * n);
+	ctx.arcTo(1.5 * n, 1.5 * n, 1.5 * n, .25 * n, n * 1.25);
+	ctx.arcTo(1.5 * n, 1.5 * n, 2.75 * n, 1.5 * n, n * 1.25);
+	ctx.arcTo(1.5 * n, 1.5 * n, 1.5 * n, 2.75 * n, n * 1.25);
+	ctx.arcTo(1.5 * n, 1.5 * n, .25 * n, 1.5 * n, n * 1.25);
+	ctx.fill();
+	ctx.closePath();
+}
+function loadFlag(n) {
+	if (n == 0) {
+		starlight();
+	}
+};
+loadFlag(0);
+		</script>
+	</body>
+</html>
