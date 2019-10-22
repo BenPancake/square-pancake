@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+let volInput = document.createElement("input");
+document.body.appendChild(volInput);
+volInput.type = "range";
+volInput.max = 64;
+volInput.min = 0;
+// volInput.step = 1; default
+volInput.value = 32;
+let testButton = document.createElement("button");
+document.body.appendChild(testButton);
+testButton.innerHTML = "Test loudness";
+let modInput = document.createElement("input");
+document.body.appendChild(modInput);
+modInput.type = "number";
+modInput.value = 600;
+let schtep = 2 ** (1/12);
+let actx = new AudioContext();
+function Note(n, offset, duration) {
+	duration = duration || 1;
+	let oscillator = actx.createOscillator();
+	let gain = actx.createGain();
+	oscillator.type = "sine";
+	oscillator.frequency.value = (schtep ** n) * 220;
+	oscillator.connect(gain);
+	gain.gain.value = 0;
+	//gain.gain.setTargetAtTime(1.0, actx.currentTime + .1, .1);
+	//gain.gain.setTargetAtTime(1.0, actx.currentTime + .9, .1);
+	gain.gain.setTargetAtTime(volInput.value / 64, actx.currentTime + .02 + offset, .02);
+	gain.gain.setTargetAtTime(0.0, actx.currentTime + .08 + offset, .01);
+	gain.connect(actx.destination);
+	oscillator.start(actx.currentTime + offset);
+	oscillator.stop(actx.currentTime + duration + offset);
+}
+let alarmDate = new Date().getTime() / 1000;
+let alarmMod = modInput.value;
+setInterval(function() {
+	let date = new Date().getTime() / 1000;
+	if (Math.abs(date - alarmDate - 1) < .5
+	 || Math.abs(date - alarmDate - 2) < .5
+	 || Math.abs(date - alarmDate - 3) < .5
+	 || Math.abs(date - alarmDate - 13) < .5) {
+		Note(0, 0, .5);
+	}
+	else if (date - alarmDate > alarmMod) {
+		alarmDate = new Date().getTime() / 1000;
+	}
+}, 1000);
+testButton.addEventListener("click", function() {
+	Note(0, 0, .5);
+}, false);
+modInput.addEventListener("input", function() {
+	alarmMod = Number(modInput.value);
+}, false);
+		</script>
+	</body>
+</html>
