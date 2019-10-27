@@ -1,0 +1,29 @@
+{
+	"name": "Gettin Mark Example",
+	"version": "1.0",
+	"description": "Build an Extension!",
+	"permissions": [
+		"tabs",
+		"tabCapture",
+		"desktopCapture",
+		"activeTab"
+	],
+	"browser_action": {
+		
+	},
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"css": ["style.css"]
+		},
+		{
+			"matches": ["<all_urls>"],
+			"js": ["contentscript.js"]
+		}
+	],
+	"background": {
+		"scripts": ["background.js"],
+		"persistent": false
+	},
+	"manifest_version": 2
+}
