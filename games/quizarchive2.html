@@ -580,9 +580,9 @@ function Question(inputStr, inputWeights, id) {
 		answerButtons[i] = document.createElement("input");
 		answerButtons[i].type = "radio";
 		answerButtons[i].name = "" + id;
-		answerButtons[i].id = "check_" + j;
+		answerButtons[i].id = id + "_" + j;
 		let label = document.createElement("label");
-		label.setAttribute("for", "check_" + j);
+		label.setAttribute("for", id + "_" + j);
 		label.innerHTML = inputLines[j];
 		label.addEventListener("click", function() {
 			answerButtons[i].checked = true;
