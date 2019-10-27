@@ -654,6 +654,19 @@ function displayScores(arr) {
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.closePath();
 	ctx.beginPath();
+	ctx.strokeStyle = "#aaa";
+	ctx.lineCap = "round";
+	ctx.lineWidth = 2;
+	for (let i = 0; i < arr.length; i++) {
+		let ang = 2 * Math.PI * (i / arr.length - 1/4);
+		let x = (Math.cos(ang) * arr[i] * .5 + 1) * canvas.width / 2 - 25;
+		let y = (Math.sin(ang) * arr[i] * .5 + 1) * canvas.height / 2 + 20;
+		ctx.moveTo(canvas.width / 2 - 25, canvas.height / 2 + 20);
+		ctx.lineTo(x, y);
+	}
+	ctx.stroke();
+	ctx.closePath();
+	ctx.beginPath();
 	ctx.fillStyle = "rgba(150,0,106,.4)";
 	ctx.strokeStyle = "#96006a";
 	ctx.lineCap = "round";
@@ -661,8 +674,8 @@ function displayScores(arr) {
 	for (let j = 0; j < arr.length + 1; j++) {
 		i = j % arr.length;
 		let ang = 2 * Math.PI * (i / arr.length - 1/4);
-		let x = (Math.cos(ang) * arr[i] * .6 + 1) * canvas.width / 2;
-		let y = (Math.sin(ang) * arr[i] * .6 + 1) * canvas.height / 2;
+		let x = (Math.cos(ang) * arr[i] * .5 + 1) * canvas.width / 2 - 25;
+		let y = (Math.sin(ang) * arr[i] * .5 + 1) * canvas.height / 2 + 20;
 		if (j == 0) {
 			ctx.moveTo(x, y);
 		}
