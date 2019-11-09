@@ -51,9 +51,12 @@ function Key(n, x, y) {
 	let playing = false;
 	let oscillatorSetup = function() {
 		oscillator = actx.createOscillator();
+		let gain = actx.createGain();
+		gain.gain.value = .25;
 		oscillator.type = "sawtooth";
 		oscillator.frequency.value = freq;
-		oscillator.connect(actx.destination);
+		oscillator.connect(gain);
+		gain.connect(actx.destination);
 	}
 	oscillatorSetup();
 	let oscillatorStart = function() {
