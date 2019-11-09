@@ -72,10 +72,12 @@ function Key(n, x, y) {
 			oscillatorStop();
 		}
 	}, false);
-	this.div.addEventListener("touchstart", function() {
+	this.div.addEventListener("touchstart", function(e) {
+		e.preventDefault();
 		oscillatorStart();
 	}, false);
-	this.div.addEventListener("touchmove", function() {
+	this.div.addEventListener("touchmove", function(e) {
+		e.preventDefault();
 		oscillatorStart();
 	}, false);
 	this.div.addEventListener("touchend", function() {
@@ -90,6 +92,15 @@ addEventListener("mousedown", function() {
 }, false);
 addEventListener("mouseup", function() {
 	mouseDown = false;
+}, false);
+addEventListener("contextmenu", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchstart", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchmove", function(e) {
+	e.preventDefault();
 }, false);
 for (let i = 0; i < 6 * 12; i++) { // 6 octaves
 	keys[i] = new Key(i, (i % 12) * 110 + 5, Math.floor(i / 12) * 110 + 5);
