@@ -14,6 +14,21 @@ let actx = new AudioContext();
 let mouseDown = false;
 //document.body.style = "grid-template-columns: 8% 9% 8% 8% 8% 9% 8% 9% 8% 8% 8% 9%; grid-template-rows: 17% 16% 17% 17% 16% 17%; display: grid;";
 document.body.style = "width: 100%; height: 100%; display: grid; grid-template-columns: repeat(12, 1fr); grid-gap: 0; grid-template-rows: repeat(6, 1fr); margin: 0;";
+function absorbEvent_(event) {
+	var e = event || window.event;
+	e.preventDefault && e.preventDefault();
+	e.stopPropagation && e.stopPropagation();
+	e.cancelBubble = true;
+	e.returnValue = false;
+	return false;
+}
+
+function preventEverything(node) {
+	node.ontouchstart = absorbEvent_;
+	node.ontouchmove = absorbEvent_;
+	node.ontouchend = absorbEvent_;
+	node.ontouchcancel = absorbEvent_;
+}
 function Key(n, x, y) {
 	this.n = n;
 	//let col = (n % 12) * 100/12;
@@ -86,6 +101,7 @@ function Key(n, x, y) {
 	this.div.addEventListener("touchcancel", function() {
 		oscillatorsStop();
 	}, false);
+	preventEverything(this.div);
 }
 addEventListener("mousedown", function() {
 	mouseDown = true;
@@ -102,6 +118,7 @@ addEventListener("touchstart", function(e) {
 addEventListener("touchmove", function(e) {
 	e.preventDefault();
 }, false);
+preventEverything(document.body);
 for (let i = 0; i < 6 * 12; i++) { // 6 octaves
 	keys[i] = new Key(i, (i % 12) * 110 + 5, Math.floor(i / 12) * 110 + 5);
 }
