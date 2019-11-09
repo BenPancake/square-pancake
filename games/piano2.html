@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<style>
+html {
+	width: 100%;
+	height: 100%;
+}
+		</style>
+		<script>
+let keys = [];
+let schtep = 2 ** (1/12);
+let actx = new AudioContext();
+let mouseDown = false;
+//document.body.style = "grid-template-columns: 8% 9% 8% 8% 8% 9% 8% 9% 8% 8% 8% 9%; grid-template-rows: 17% 16% 17% 17% 16% 17%; display: grid;";
+document.body.style = "width: 100%; height: 100%; display: grid; grid-template-columns: repeat(12, 1fr); grid-gap: 0; grid-template-rows: repeat(6, 1fr); margin: 0;";
+function Key(n, x, y) {
+	this.n = n;
+	//let col = (n % 12) * 100/12;
+	//let row = Math.floor(n / 12) * 100/6;
+	let col = n % 12;
+	let row = Math.floor(n / 12);
+	let freq = (schtep ** n) * 55;
+	this.div = document.createElement("div");
+	//this.div.style = `position: absolute; left: ${x}px; top: ${y}px; width: 100px; height: 100px; border: 1px #000 solid;`;
+	//this.div.style = `position: absolute; left: ${col}%; top: ${row}%; width: ${100/12}%; height: ${100/6}%;`;
+	this.div.style = `display: grid; grid-area: ${row + 1} / ${col + 1} / ${row + 2} / ${col + 2};`;
+	this.pre = document.createElement("pre");
+	this.pre.innerHTML = freq.toFixed(1);
+	this.pre.style = `position: absolute; left: ${x}px; top: ${y}px;`;
+	//document.body.appendChild(this.pre);
+	document.body.appendChild(this.div);
+	this.div.style.backgroundColor = ["#444", "#555", "#666", "#777", "#888", "#999", "#aaa", "#bbb", "#ccc", "#ddd", "#eee", "#fff", "#444", "#555", "#666", "#777", "#444", "#555"][n % 18];
+	//this.div.style.backgroundColor = `rgb(${n},0,0)`;
+	let oscillator = false;
+	let playing = false;
+	let oscillatorSetup = function() {
+		oscillator = actx.createOscillator();
+		oscillator.type = "sawtooth";
+		oscillator.frequency.value = freq;
+		oscillator.connect(actx.destination);
+	}
+	oscillatorSetup();
+	let oscillatorStart = function() {
+		if (!playing) {
+			oscillator.start();
+			playing = true;
+		}
+	}
+	let oscillatorStop = function() {
+		if (playing) {
+			oscillator.stop();
+			oscillatorSetup();
+			playing = false;
+		}
+	}
+	this.div.addEventListener("mousedown", function(e) {
+		e.preventDefault();
+		oscillatorStart();
+		console.log(col, row);
+	}, false);
+	this.div.addEventListener("mouseenter", function() {
+		if (mouseDown) {
+			oscillatorStart();
+		}
+	}, false);
+	this.div.addEventListener("mouseup", function() {
+		oscillatorStop();
+	}, false);
+	this.div.addEventListener("mouseleave", function() {
+		if (mouseDown) {
+			oscillatorStop();
+		}
+	}, false);
+	this.div.addEventListener("touchstart", function() {
+		oscillatorStart();
+	}, false);
+	this.div.addEventListener("touchmove", function() {
+		oscillatorStart();
+	}, false);
+	this.div.addEventListener("touchend", function() {
+		oscillatorStop();
+	}, false);
+	this.div.addEventListener("touchcancel", function() {
+		oscillatorsStop();
+	}, false);
+}
+addEventListener("mousedown", function() {
+	mouseDown = true;
+}, false);
+addEventListener("mouseup", function() {
+	mouseDown = false;
+}, false);
+for (let i = 0; i < 6 * 12; i++) { // 6 octaves
+	keys[i] = new Key(i, (i % 12) * 110 + 5, Math.floor(i / 12) * 110 + 5);
+}
+		</script>
+	</body>
+</html>
