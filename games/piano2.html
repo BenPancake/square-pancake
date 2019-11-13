@@ -10,7 +10,7 @@ html {
 		<script>
 let keys = [];
 let schtep = 2 ** (1/12);
-let actx = new (AudioContext || webkitAudioContext)();
+let actx = new (window.AudioContext || window.webkitAudioContext)();
 let mouseDown = false;
 //document.body.style = "grid-template-columns: 8% 9% 8% 8% 8% 9% 8% 9% 8% 8% 8% 9%; grid-template-rows: 17% 16% 17% 17% 16% 17%; display: grid;";
 document.body.style = "width: 100%; height: 100%; display: grid; grid-template-columns: repeat(12, 1fr); grid-gap: 0; grid-template-rows: repeat(6, 1fr); margin: 0;";
