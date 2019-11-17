@@ -612,7 +612,7 @@ pre.innerHTML = "drag a rightward to add note\nleft click to select\nright click
 pre.style = "position: fixed; left: 580px; top: -10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
 let spgInput = document.createElement("input");
 document.body.appendChild(spgInput);
-			spg.value = .5;
+			spgInput.value = .5;
 spgInput.addEventListener("mouseout", function() {
 	spg = Number(spgInput.value);
 	this.blur();
