@@ -397,6 +397,15 @@ function touchEnd(e) {
 canvas.addEventListener("click", clickRelay, false);
 canvas.addEventListener("touchstart", touchRelay, false);
 canvas.addEventListener("touchend", touchEnd, false);
+addEventListener("contextmenu", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchstart", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchmove", function(e) {
+	e.preventDefault();
+}, false);
 		</script>
 	</body>
 </html>
