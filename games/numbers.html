@@ -1,0 +1,446 @@
+let canvas = document.createElement("canvas");
+canvas.width = 1366;
+canvas.height = 768;
+let ctx = canvas.getContext("2d");
+document.body.appendChild(canvas);
+canvas.style = "left: 0px; top: 0px; position: absolute;";
+let clickHandler = function() {};
+let gameJustFinished = function() {};
+let board = {
+	width: 9,
+	height: 5,
+	data: []
+}
+let graph = {
+	tileSize: 80,
+	borderWidth: 0,
+	borderHeight: 0
+}
+board.midX = Math.round((board.width - 1) / 2);
+board.midY = Math.round((board.height - 1) / 2);
+function neighborSum(x, y) {
+	let sum = 0;
+	let cosine = [1,1,0,-1,-1,-1,0,1,1,1,0,-1];
+	for (let n = 0; n < 8; n++) {
+		let val = board.data[y + cosine[n + 2]][x + cosine[n]];
+		sum += val >= 0 && val < 9;
+	}
+	return sum;
+}
+function generateBoard() {
+	for (let i = 0; i < board.height; i++) {
+		board.data[i] = [];
+		for (let j = 0; j < board.width; j++) {
+			board.data[i][j] = -1;
+		}
+		board.data[i][board.midX] = 9;
+	}
+	board.data[board.midY][board.midX - 1] = 0;
+	board.data[board.midY][board.midX + 1] = 0;
+	for (let i = 0; i < 100; i++) {
+		let availableCoords = [];
+		for (let x = 1; x < board.width - 1; x++) {
+			for (let y = 1; y < board.height - 1; y++) {
+				if (board.data[y][x] >= 0) {
+					continue;
+				}
+				let sum = neighborSum(x, y);
+				if (sum > 0) {
+					availableCoords.push([x, y, sum]);
+				}
+			}
+		}
+		if (availableCoords.length == 0) {
+			break;
+		}
+		let coord = availableCoords[Math.floor(Math.random() * availableCoords.length)];
+		board.data[coord[1]][coord[0]] = Math.floor(coord[2] * (1 - Math.random() * Math.random())) + 1;
+	}
+}
+generateBoard();
+function generateBoardSide(side) {
+	let minx = 1;
+	let miny = 1;
+	let maxx = board.midX;
+	let maxy = board.height - 1;
+	// [min, max)
+	if (side) {
+		minx = board.midX + 1;
+		maxx = board.width - 1;
+	}
+	for (let i = miny; i < maxy; i++) {
+		for (let j = minx; j < maxx; j++) {
+			board.data[i][j] = -1;
+		}
+	}
+	if (!side) {
+		board.data[board.midY][board.midX - 1] = 0;
+	}
+	else {
+		board.data[board.midY][board.midX + 1] = 0;
+	}
+	console.log(side);
+	for (let i = 0; i < 100; i++) {
+		let availableCoords = [];
+		for (let x = minx; x < maxx; x++) {
+			for (let y = miny; y < maxy; y++) {
+				if (board.data[y][x] >= 0) {
+					continue;
+				}
+				let sum = neighborSum(x, y);
+				if (sum > 0) {
+					availableCoords.push([x, y, sum]);
+				}
+			}
+		}
+		if (availableCoords.length == 0) {
+			break;
+		}
+		let coord = availableCoords[Math.floor(Math.random() * availableCoords.length)];
+		board.data[coord[1]][coord[0]] = Math.floor(coord[2] * (1 - Math.random() * Math.random())) + 1;
+	}
+}
+function absorbEvent_(event) {
+	var e = event || window.event;
+	e.preventDefault && e.preventDefault();
+	e.stopPropagation && e.stopPropagation();
+	e.cancelBubble = true;
+	e.returnValue = false;
+	return false;
+}
+function preventEverything(node) {
+	node.ontouchstart = absorbEvent_;
+	node.ontouchmove = absorbEvent_;
+	node.ontouchend = absorbEvent_;
+	node.ontouchcancel = absorbEvent_;
+	node.oncontextmenu = absorbEvent_;
+}
+preventEverything(document.body);
+preventEverything(canvas);
+/*
+0	1
+1	1
+2	1
+3	2
+*/
+ctx.beginPath();
+ctx.fillStyle = "#fa5";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.closePath();
+let numberTemplates = [
+	[
+		"#####",
+		"#   #",
+		"#   #",
+		"#   #",
+		"#####"
+	],
+	[
+		"###  ",
+		"  #  ",
+		"  #  ",
+		"  #  ",
+		"#####"
+	],
+	[
+		"#### ",
+		"    #",
+		" ### ",
+		"#    ",
+		"#####"
+	],
+	[
+		"#### ",
+		"    #",
+		"  ## ",
+		"    #",
+		"#### "
+	],
+	[
+		"#   #",
+		"#   #",
+		"#####",
+		"    #",
+		"    #"
+	],
+	[
+		"#####",
+		"#    ",
+		"#####",
+		"    #",
+		"#####"
+	],
+	[
+		"#####",
+		"#    ",
+		"#####",
+		"#   #",
+		"#####"
+	],
+	[
+		"#####",
+		"    #",
+		"    #",
+		"    #",
+		"    #"
+	],
+	[
+		" ### ",
+		"#   #",
+		" ### ",
+		"#   #",
+		" ### "
+	],
+	[
+		" ### ",
+		"#   #",
+		" ####",
+		"    #",
+		"    #"
+	]
+];
+function drawNumber(n, xOff, yOff, scl, orientation) {
+	ctx.beginPath();
+	ctx.fillStyle = "#fec";
+	ctx.fillRect(xOff, yOff, scl, scl);
+	ctx.closePath();
+	if (n < 0 || n >= 9) {
+		return;
+	}
+	scl /= 7;
+	ctx.beginPath();
+	ctx.fillStyle = "#a50";
+	if (orientation) { // right
+		for (let i = 0; i < 5; i++) {
+			for (let j = 0; j < 5; j++) {
+				if (numberTemplates[n][j][4 - i] == "#") {
+					ctx.beginPath();
+					ctx.fillRect((j + 1) * scl + xOff, (i + 1) * scl + yOff, scl, scl);
+					ctx.closePath();
+				}
+			}
+		}
+	}
+	else { // left
+		for (let i = 0; i < 5; i++) {
+			for (let j = 0; j < 5; j++) {
+				if (numberTemplates[n][4 - j][i] == "#") {
+					ctx.beginPath();
+					ctx.fillRect((j + 1) * scl + xOff, (i + 1) * scl + yOff, scl, scl);
+					ctx.closePath();
+				}
+			}
+		}
+	}
+	ctx.closePath();
+}
+//drawNumber(9, 200, 100, 20, 0);
+//drawNumber(9, 700, 400, 20, 1);
+function drawNumberShortcut(j, i) { // x, y
+	drawNumber(
+		board.data[i][j],
+		(j - 1) * (graph.borderWidth + graph.tileSize) + graph.borderWidth,
+		(i - 1) * (graph.borderHeight + graph.tileSize) + graph.borderHeight,
+		graph.tileSize,
+		1
+	);
+}
+function drawAll(tileSize) {
+	let borderWidth = (canvas.width - (board.width - 2) * tileSize) / (board.width - 1);
+	let borderHeight = (canvas.height - (board.height - 2) * tileSize) / (board.height - 1);
+	graph.borderWidth = borderWidth;
+	graph.borderHeight = borderHeight;
+	for (let i = 0; i < board.data.length; i++) {
+		for (let j = 0; j < Math.floor(board.width / 2); j++) {
+			drawNumber(
+				board.data[i][j],
+				(j - 1) * (borderWidth + tileSize) + borderWidth,
+				(i - 1) * (borderHeight + tileSize) + borderHeight,
+				tileSize, 0);
+		}
+		for (let j = Math.ceil(board.width / 2); j < board.width; j++) {
+			drawNumber(
+				board.data[i][j],
+				(j - 1) * (borderWidth + tileSize) + borderWidth,
+				(i - 1) * (borderHeight + tileSize) + borderHeight,
+				tileSize, 1);
+		}
+	}
+	ctx.beginPath();
+	ctx.fillStyle = "#a50";
+	let height = (graph.borderHeight / 2);
+	ctx.fillRect(0, 0, canvas.width, height);
+	ctx.fillRect(0, canvas.height, canvas.width, -height);
+	ctx.closePath();
+}
+drawAll(graph.tileSize);
+let points = {
+	left: 4,
+	right: 4
+};
+let pointWidth = 100;
+let pointHeight = canvas.height / (points.left + points.right + 1);
+function drawPoints() {
+	ctx.beginPath();
+	ctx.fillStyle = "#fa5";
+	ctx.fillRect((canvas.width - pointWidth) / 2 - 1, 0, pointWidth + 2, canvas.height);
+	ctx.closePath();
+	ctx.beginPath();
+	ctx.fillStyle = "#a5a";
+	ctx.fillRect((canvas.width - pointWidth) / 2, 0, pointWidth, pointHeight * points.left);
+	ctx.fillRect((canvas.width - pointWidth) / 2, canvas.height, pointWidth, -pointHeight * points.right);
+	ctx.closePath();
+}
+drawPoints();
+function disableClick() {
+	
+}
+
+//let a = b ? c : d;
+gameJustFinished = function() {
+	ctx.beginPath();
+	ctx.fillStyle = "#a5a";
+	//ctx.fillRect(points.left ? (canvas.width + pointWidth) / 2 : 0, 0, (canvas.width - pointWidth) / 2, canvas.height);
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.closePath();
+	let leftStr = "You lost. :(";
+	let rightStr = "You won. :)";
+	if (points.left) {
+		leftStr = "You won. :)";
+		rightStr = "You lost. :(";
+	}
+	ctx.beginPath();
+	ctx.fillStyle = "#fff";
+	ctx.font = "30px monospace";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.rotate(Math.PI / 2);
+	ctx.fillText(leftStr, canvas.height / 2, -canvas.width * 1/4);
+	ctx.rotate(Math.PI);
+	ctx.fillText(rightStr, -canvas.height / 2, canvas.width * 3/4);
+	ctx.rotate(Math.PI / 2);
+	ctx.closePath();
+	setTimeout(function() {
+		ctx.beginPath();
+		ctx.fillStyle = "#fa5";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.closePath();
+		generateBoard();
+		drawAll(graph.tileSize);
+		points = {
+			left: 4,
+			right: 4
+		}
+		drawPoints();
+		clickHandler = boardClickHandler;
+	}, 3000);
+};
+function scoreBoard(player) {
+	let minx = 1;
+	let miny = 1;
+	let maxx = board.midX;
+	let maxy = board.height;
+	// [min, max)
+	if (player) {
+		minx = board.midX + 1;
+		maxx = board.width;
+	}
+	let won = 1;
+	for (let i = miny; i < maxy; i++) {
+		for (let j = minx; j < maxx; j++) {
+			if (board.data[i][j] >= 0) {
+				won = -1;
+				break;
+			}
+		}
+	}
+	points[["left","right"][player]] += won;
+	points[["right","left"][player]] -= won;
+	let gameover = false;
+	if (points.left == 0 || points.right == 0) {
+		clickHandler = disableClick;
+		gameJustFinished();
+		gameover = true;
+	}
+	if (!gameover) {
+		generateBoardSide(player);
+		drawAll(graph.tileSize);
+	}
+	drawPoints();
+}
+function boardClickHandler(epageX, epageY) {
+	// - tileSize  < y - i * (borderHeight + tileSize) < borderHieght
+	let x = Math.floor((epageX - graph.borderWidth / 2) / (graph.borderWidth + graph.tileSize)) + 1;
+	let y = Math.floor((epageY - graph.borderHeight / 2) / (graph.borderHeight + graph.tileSize)) + 1;
+	console.log(board.data, y, x);
+	let val = board.data[y][x];
+	if (val == -1) {
+		if (y == 0 || y == board.height - 1) {
+			if (x < board.midX) {
+				scoreBoard(0);
+			}
+			else if (x > board.midX) { // != midX
+				scoreBoard(1);
+			}
+		}
+		return;
+	}
+	let sum = neighborSum(x, y);
+	if (sum >= val) {
+		board.data[y][x] = -1;
+		drawNumberShortcut(x, y);
+		let minx = 1;
+		let miny = 1;
+		let maxx = board.midX;
+		let maxy = board.height;
+		let player = x > maxx ? 1 : 0;
+		if (player) {
+			minx = board.midX + 1;
+			maxx = board.width;
+		}
+		let boardClear = true;
+		for (let i = miny; i < maxy; i++) {
+			for (let j = minx; j < maxx; j++) {
+				if (board.data[i][j] != -1) {
+					boardClear = false;
+				}
+			}
+		}
+		if (boardClear) {
+			scoreBoard(player);
+			//document.write("");
+		}
+	}
+}
+clickHandler = boardClickHandler;
+function clickRelay(e) {
+	clickHandler(e.pageX, e.pageY);
+}
+function touchRelay(e) {
+	clickHandler(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+}
+function touchEnd(e) {
+	e.preventDefault();
+	return;
+}
+canvas.addEventListener("click", clickRelay, false);
+canvas.addEventListener("touchstart", touchRelay, false);
+canvas.addEventListener("touchend", touchEnd, false);
+addEventListener("contextmenu", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchstart", function(e) {
+	e.preventDefault();
+}, false);
+addEventListener("touchmove", function(e) {
+	e.preventDefault();
+}, false);
+canvas.addEventListener("contextmenu", function(e) {
+	e.preventDefault();
+}, false);
+canvas.addEventListener("touchstart", function(e) {
+	e.preventDefault();
+}, false);
+canvas.addEventListener("touchmove", function(e) {
+	e.preventDefault();
+}, false);
