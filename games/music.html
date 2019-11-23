@@ -146,6 +146,7 @@ function bufferToWave(abuffer, len) {
 let shtep = 2 ** (1/12);
 let instruments = [
 	function(t, f) {
+		return ((t * f) % 1) * 2 - 1;
 		//return Math.sin(t * f * 2 * Math.PI);
 		/* imagine an infinite amount of datas on a graph, and they start at multiples of f * actx.sampleRate.
 		sum up the relevant ones, which start at most 300 before the starting buffer index.
@@ -173,16 +174,15 @@ let instruments = [
 		let startN = Math.ceil(-currentIndex / wavelen);
 		let endN = Math.floor((300 - currentIndex) / wavelen);
 		for (let n = startN; n <= endN; n++) {
-			sum += instrument0data[Math.floor((currentIndex + n * wavelen)) % 300];
+			sum += instrument0data[Math.floor((currentIndex + n * wavelen))];
 		}
 		if (isNaN(sum)) {
 			console.log(sum, wavelen, currentIndex, startN, endN);
 		}
-		return sum * 10;
-		return ((t * f) % 1) * 2 - 1;
+		return sum * 2;
 	},
 	function(t, f) {
-		return Math.sin(t * f * 2 * Math.PI);
+		return 0;
 	},
 	function(t, f) {
 		return Math.sin(t * f * 2 * Math.PI) / f * 11000 / (1.001 ** (t - start));
@@ -213,9 +213,9 @@ function fancerp(a, b, g) {
 	//return (1 - g) * a + g * b;
 	return a * g + (b - a) * g * g / 2;
 }
-function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate) {
+function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate, rampOn, rampOff) {
 	let start = Math.floor(x0 * sampleRate * spg);
-	let end = Math.floor(x1 * sampleRate * spg);
+	let end = Math.min(Math.floor(x1 * sampleRate * spg), fancyBufferData.length - 1);
 	let duration = end - start;
 	let startFreq = noteToFreq(y0);
 	let endFreqThing = noteToFreq(y1) - startFreq;
@@ -225,14 +225,21 @@ function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate) {
 		let freq = endFreqThing * g / 2 + startFreq;
 		let fofx = t * freq;
 		let bufVal = instruments[staves[staff].instrument](t, freq) * lerp(g0, g1, g) / 16;
-		if (t < .1) {
-			bufVal *= t * 10;
+		let r = .02;
+		if (rampOn) {
+			if (t < r) {
+				bufVal *= t / r;
+			}
 		}
-		let tt = duration / actx.sampleRate - t;
-		if (tt < .1) {
-			bufVal *= tt * 10;
+		if (rampOff) {
+			let tt = duration / actx.sampleRate - t;
+			if (tt < r) {
+				bufVal *= tt / r;
+			}
 		}
-		//console.log(tt);
+		if (isNaN(bufVal)) {
+			console.log(i);
+		}
 		bufferData[i] += bufVal;
 	}
 	console.log(x0, y0, g0, x1, y1, g1, staff);
@@ -250,7 +257,7 @@ function Note(x0, y0, g0, x1, y1, g1, staff) {
 	this.selected = false;
 	this.selectionPartners = [this];
 	this.addCompile = function(bufferData, sampleRate) {
-		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate);
+		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate, false, false);
 		console.log("add-compiled note", this.g0, this.g1, this.x0, this.x1);
 	};
 	this.addCompile(fancyBufferData, actx.sampleRate);
