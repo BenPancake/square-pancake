@@ -14,9 +14,8 @@ copies or substantial portions of the Software.
 
 
 With regard to the music maker (purple and black background, boxes of color #fa0),
-you can use it, download it, modify it, but don't try to sell it or pass it off
-as your own. I worked rather hard on it. It's my pride and joy.
-Besides, I don't want to be involved in a scam.
+you can use it, download it, modify it, but don't sell it or pass it off
+as your own.
 
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
