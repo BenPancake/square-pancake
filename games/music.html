@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+html {
+	width: 4em;
+	height: 4em;
+}
+body {
+	width: 4em;
+	height: 4em;
+	background:
+		repeating-linear-gradient( 0deg, rgba(0,0,0,.7), rgba(0,0,0,.7) 2em, rgba(85,0,85,.5) 2em, rgba(85,0,85,.5) 4em),
+		repeating-linear-gradient(90deg, black, black 2em, rgba(85,0,85,1) 2em, rgba(85,0,85,1) 4em);
+}
+button, input, a, pre {
+	background-color: #fa0;
+	border: 3px #ccc solid;
+}
+button:active {
+	background-color: #a50;
+}
+		</style>
+	</head>
+	<body>
+		<script id="script">
+// to do: include staff in another, in-editor length editing
+let songLength = 12; // beats
+let snap = 4; // in 1/beats
+let spg = .5;
+let beatWidth = 128; // pixels
+let noteHeight = 16;
+let snapvol = .125;
+let instrument0data = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.0007601017701007357,-0.0009121221241208829,-0.0035893915852734434,-0.004124845477503956,-0.00919203248008299,-0.010205469880598797,-0.01761440008399357,-0.019096186124672527,-0.028567804188667112,-0.03046212780146603,-0.04164551626528395,-0.04388219395804753,-0.05643215555817539,-0.05894214787820097,-0.07252557552479569,-0.07524226105411463,-0.0895254031873099,-0.09238203161394894,-0.10701983976616174,-0.1099474013966043,-0.12458592054660371,-0.12751362437660357,-0.1418038567884793,-0.14466190327085443,-0.15827928109636288,-0.16100275666146457,-0.17366598066431704,-0.17619862546488751,-0.1876835737893987,-0.18998056345430092,-0.20012742014045581,-0.20215679147768684,-0.21087051908915944,-0.21261326461145394,-0.21985873048117674,-0.2213078236551213,-0.22710135518055208,-0.22826006148563824,-0.23265917151109541,-0.23353899351618684,-0.23663170890035012,-0.23725025197718277,-0.23914507144263472,-0.2395240353357251,-0.24034114690147532,-0.24050456921462535,-0.24036862911956103,-0.24034144110054817,-0.2393759738468245,-0.23918288039607977,-0.23750619997904543,-0.23717086389563855,-0.23489332541793762,-0.23443781772239744,-0.23166016917051052,-0.23110463946013315,-0.22791723912529993,-0.22727975905833325,-0.22376244138768836,-0.22305897785355938,-0.21928137921318497,-0.2185258594851101,-0.21454804828691154,-0.21375248604727182,-0.20962577436659297,-0.2088004320304572,-0.20456827558262367,-0.20372184429305695,-0.19942076317047586,-0.19856054694595965,-0.19422102046888137,-0.1933531151734657,-0.1890004207503474,-0.1881298818657237,-0.18378486036290026,-0.18291585606233557,-0.17859559544437606,-0.17773154332078417,-0.17344997886079588,-0.17259366596879824,-0.1683620997202839,-0.16751578647058102,-0.16334333144674473,-0.1625088404419775,-0.15840279649019678,-0.15758158769984063,-0.1535477567327875,-0.1527409905393769,-0.14878393886041863,-0.14799252852462697,-0.14411580367022797,-0.1433404586993482,-0.1395467676688355,-0.13878802946273294,-0.13507938452699034,-0.1343376555398418,-0.13071549309297947,-0.12999106060360702,-0.12645633779766888,-0.12574939323648124,-0.12230266645210937,-0.12161332109523498,-0.11825480967038851,-0.11758310738541922,-0.11431274545945888,-0.11365867307426682,-0.11047615190896752,-0.10983964767590765,-0.10674445038684235,-0.10612541092902932,-0.10311684119614171,-0.10251512724956419,-0.09959233326894382,-0.09900777447281975,-0.09616976915635195,-0.09560216809305841,-0.0928478463122396,-0.09229698195607586,-0.08962513545459727,-0.08909076615430155,-0.08650009661518097,-0.08598196270735686,-0.08347109334917602,-0.08296891947753984,-0.0805364054660567,-0.08004990266376007,-0.07769424055575898,-0.07722310813415877,-0.07494274451639192,-0.07448667179283854,-0.07228001123734415,-0.07183867912624527,-0.06970409155173352,-0.06927717403683117,-0.06721300154213791,-0.06680016704319927,-0.06480473026133712,-0.06440564290496469,-0.062477246913660814,-0.062091567715400045,-0.06022850753108362,-0.05985589549422034,-0.05805646117031045,-0.05769657430552848,-0.05595905565186192,-0.05561155192112861,-0.053934242858891084,-0.053598781046443576,-0.05197998361159012,-0.051656224124619426,-0.050094252132149256,-0.04978185773365522,-0.04827504011498546,-0.04797367659125151,-0.046520360417119794,-0.04622969718229345,-0.04482825038396761,-0.044547961024302446,-0.043196774826285124,-0.042926537586681655,-0.04162402866449668,-0.04136352688005969,-0.04010813925704804,-0.039857061732445714,-0.03864726842975311,-0.03840530976921458,-0.03723961422330374,-0.03700647511412157,-0.03588341237618473,-0.03565879982859736,-0.03457693756017954,-0.034360565106495974,-0.033318504385472056,-0.03311009224126728,-0.03210646819205709,-0.03190574338221505,-0.030939225643778177,-0.030745922096090804,-0.029815215140832078,-0.029629073749780334,-0.028732917066026195,-0.02855368572927537,-0.027690853879465332,-0.027518287509503324,-0.026687590075687787,-0.026521450588924682,-0.025721732016583135,-0.025561788302114825,-0.024791927652713184,-0.024637955522832856,-0.023896866144936822,-0.023748648269357617,-0.023035277397514015,-0.022892603223145295,-0.022205931513144553,-0.022068597171144406,-0.021407638179687792,-0.021275446381396473,-0.020639245997616327,-0.020512005920860298,-0.019899641756583826,-0.019777168923728532,-0.01918774966883834,-0.0190698658178603,-0.01850253056658953,-0.018389063516335378,-0.01784298106984429,-0.017733764580546076,-0.017208132730659954,-0.017103006360682727,-0.016597051159230287,-0.016495860118939797,-0.016008835136715478,-0.015911430140270612,-0.015442615719254121,-0.015348852835050823,-0.014897555337152441,-0.014807295837572766,-0.014372846892832598,-0.014285957103884564,-0.013867712860737584,-0.01378406401210819,-0.013381404392033603,-0.013300872468018685,-0.012913200426620938,-0.012835666018341388,-0.012462406814660307,-0.01238775497392409,-0.012028355449541495,-0.011956475544664977,-0.011610403413964566,-0.011541188987824483,-0.011207932140568571,-0.011141280771117389,-0.010820346588328552,-0.010756159751770786,-0.010447074435745798,-0.0103852573725408,-0.010087565291679399,-0.010028026875507119,-0.00974128992450623,-0.009683942534306052,-0.009407739510151638,-0.009352498905320755,-0.009086424899402437,-0.009033210098218775,-0.00877687590479671,-0.008725609066112297,-0.008478640607279993,-0.008429246915513531,-0.008191284682724082,-0.008143692236166193,-0.007914390748321627,-0.007868530450752713,-0.00764755772879637,-0.007603363184405102,-0.007390400242304325,-0.00734780765388417,-0.007142548005844596,-0.007101496076236682,-0.006903645259949414,-0.006864075096691961,-0.006673350212380392,-0.006635205235518078,-0.006451334500521561,-0.006414560353522258,-0.0062372826721287505,-0.006201827135850048,-0.00603089168406888,-0.005996704593712645,-0.005831870418661223,-0.005798903583650939,-0.00563993921721519,-0.005608146343928042,-0.005454829430345287,-0.005424166047628736,-0.005276282984633338];
+// this data was generated by a thing that I made, go check it out! It's the cellular 3d wave automata.
+// freq = schtep ** (note) * 440
+// log(freq / 440) / log(schtep) = note
+// log (2 ** 1/12) = 1/12 log 2
+// 12 * log(freq / 440) / log(2) = note
+// scale should go from -60n to 60n
+let bgcanvas = document.createElement("canvas");
+document.body.appendChild(bgcanvas);
+let bgctx = bgcanvas.getContext("2d");
+bgcanvas.style = "position: absolute; left: 128px; top: 7em;";
+let canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
+let ctx = canvas.getContext("2d");
+canvas.style = "position: absolute; left: 128px; top: 7em;";
+function Staff(inst, lowNote, highNote) {
+	this.instrument = inst;
+	this.lowNote = lowNote;
+	this.highNote = highNote;
+}
+let staves = [];
+let notes = [];
+let currentStaff = 0;
+let lastStaff = 0;
+function drawBackground() {
+	let boardHeight = staves[currentStaff].highNote - staves[currentStaff].lowNote + 1;
+	bgcanvas.width = beatWidth * songLength; // this clears bgcanvas
+	bgcanvas.height = noteHeight * boardHeight;
+	for (let i = 0; i < boardHeight; i++) {
+		let note = (i - staves[currentStaff].highNote + 119) % 12; // A,A#...
+		bgctx.beginPath();
+		bgctx.fillStyle = ["#fff", "#ddd"][[1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0][note]];
+		bgctx.fillRect(0, i * noteHeight, bgcanvas.width, noteHeight);
+		bgctx.closePath();
+		bgctx.beginPath();
+		bgctx.fillStyle = note == 0 ? "#000" : note % 3 == 0 ? "#777" : "#ccc";
+		bgctx.fillRect(0, i * noteHeight, bgcanvas.width, 1);
+		bgctx.closePath();
+	}
+	for (let i = 0; i < songLength * snap; i++) {
+		bgctx.beginPath();
+		bgctx.fillStyle = i % snap == 0 ? "#000" : "#aaa";
+		bgctx.fillRect(i * beatWidth / snap, 0, 1, bgcanvas.height);
+		bgctx.closePath();
+	}
+}
+function drawForeground() {
+	let boardHeight = staves[currentStaff].highNote - staves[currentStaff].lowNote + 1;
+	//drawBackground();
+	canvas.width = beatWidth * songLength; // this clears bgcanvas
+	canvas.height = noteHeight * boardHeight;
+	for (let i = 0; i < notes.length; i++) {
+		if (notes[i].staff == currentStaff) {
+			notes[i].draw();
+		}
+	}
+}
+for (let i = 0; i < 10; i++) {
+	staves[i] = new Staff(0, -36, 12);
+}
+drawBackground();
+drawForeground();
+// this function is code from some other person dude, all hail other person dude
+function bufferToWave(abuffer, len) {
+	var numOfChan = abuffer.numberOfChannels,
+			length = len * numOfChan * 2 + 44,
+			buffer = new ArrayBuffer(length),
+			view = new DataView(buffer),
+			channels = [], i, sample,
+			offset = 0,
+			pos = 0;
+	// write WAVE header
+	setUint32(0x46464952);							// "RIFF"
+	setUint32(length - 8);							// file length - 8
+	setUint32(0x45564157);							// "WAVE"
+
+	setUint32(0x20746d66);							// "fmt " chunk
+	setUint32(16);									// length = 16
+	setUint16(1);									// PCM (uncompressed)
+	setUint16(numOfChan);
+	setUint32(abuffer.sampleRate);
+	setUint32(abuffer.sampleRate * 2 * numOfChan);	// avg. bytes/sec
+	setUint16(numOfChan * 2);						// block-align
+	setUint16(16);									// 16-bit (hardcoded in this demo)
+
+	setUint32(0x61746164);							// "data" - chunk
+	setUint32(length - pos - 4);					// chunk length
+	// write interleaved data
+	for(i = 0; i < abuffer.numberOfChannels; i++) {
+		channels.push(abuffer.getChannelData(i));
+	}
+	while(pos < length) {
+		for(i = 0; i < numOfChan; i++) {						 // interleave channels
+			sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+			sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; // scale to 16-bit signed int
+			view.setInt16(pos, sample, true);					// write 16-bit sample
+			pos += 2;
+		}
+		offset++																		 // next source sample
+	}
+	// create Blob
+	return new Blob([buffer], {type: "audio/wav"});
+	function setUint16(data) {
+		view.setUint16(pos, data, true);
+		pos += 2;
+	}
+	function setUint32(data) {
+		view.setUint32(pos, data, true);
+		pos += 4;
+	}
+}
+let shtep = 2 ** (1/12);
+let instruments = [
+	function(t, f) {
+		//return Math.sin(t * f * 2 * Math.PI);
+		/* imagine an infinite amount of datas on a graph, and they start at multiples of f * actx.sampleRate.
+		sum up the relevant ones, which start at most 300 before the starting buffer index.
+		i[n] = actx.sampleRate/f * n
+		What values of i are within [I - 300, I]? What mutliples of actx.sampleRate / f are within that range?
+		
+		sum of
+			  data[i + n * wavelen]
+			+ data[i + (n + 1) * wavelen]
+			+ data[i + (n + 2) * wavelen]
+			+ data[i + (n + 3) * wavelen]
+			...
+			
+			= data[i + n * wavelen]
+			+ data[i + (n + 1) * wavelen]
+			+ data[i + (n + 2) * wavelen]
+			+ data[i + (n + 3) * wavelen]
+		data is 0 for values less than 0 and greater than datalen
+		n starts at ceil(-i / wavelen)
+		n ends at floor((datalen - i) / wavelen)
+		*/
+		let sum = 0;
+		let wavelen = Math.floor(actx.sampleRate / f);
+		let currentIndex = Math.floor(t * actx.sampleRate);
+		let startN = Math.ceil(-currentIndex / wavelen);
+		let endN = Math.floor((300 - currentIndex) / wavelen);
+		for (let n = startN; n <= endN; n++) {
+			sum += instrument0data[Math.floor((currentIndex + n * wavelen)) % 300];
+		}
+		if (isNaN(sum)) {
+			console.log(sum, wavelen, currentIndex, startN, endN);
+		}
+		return sum * 10;
+		return ((t * f) % 1) * 2 - 1;
+	},
+	function(t, f) {
+		return Math.sin(t * f * 2 * Math.PI);
+	},
+	function(t, f) {
+		return Math.sin(t * f * 2 * Math.PI) / f * 11000 / (1.001 ** (t - start));
+	},
+	function(t, f) {
+		return (Math.random() - .5) / 8;
+	}
+];
+// lunchmeat, apples, bread, ravioli, ravioli sauce
+let boxSelection = [0, 0, 0, 0];
+function noteToFreq(note) {
+	return (shtep ** note) * 440;
+}
+function freqToNote(freq) {
+	return Math.log(freq / 440) / Math.log(schtep);
+}
+function preventDefault(e) {
+	e.preventDefault();
+}
+function lerp(a, b, g) {
+	return (1 - g) * a + g * b;
+}
+function relu(a) {
+	return a >= 0 ? a : 0;
+}
+function fancerp(a, b, g) {
+	//g = g * g * (3 - 2 * g);
+	//return (1 - g) * a + g * b;
+	return a * g + (b - a) * g * g / 2;
+}
+function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate) {
+	let start = Math.floor(x0 * sampleRate * spg);
+	let end = Math.floor(x1 * sampleRate * spg) + 1;
+	let duration = end - start;
+	let startFreq = noteToFreq(y0);
+	let endFreqThing = noteToFreq(y1) - startFreq;
+	for (let i = start; i < end; i++) {
+		let t = (i - start) / sampleRate;
+		let g = (i - start) / duration;
+		let freq = endFreqThing * g / 2 + startFreq;
+		let fofx = t * freq;
+		let bufVal = instruments[staves[staff].instrument](t, freq) * lerp(g0, g1, g) / 16;
+		if (t < .1) {
+			bufVal *= t * 10;
+		}
+		let tt = duration / actx.sampleRate - t;
+		if (tt < .1) {
+			bufVal *= tt * 10;
+		}
+		//console.log(tt);
+		bufferData[i] += bufVal;
+	}
+	console.log(x0, y0, g0, x1, y1, g1, staff);
+}
+function Note(x0, y0, g0, x1, y1, g1, staff) {
+	this.type = "note";
+	this.length = 1;
+	this.x0 = x0;
+	this.y0 = y0; // in half notes, A4 is 0
+	this.g0 = g0;
+	this.x1 = x1;
+	this.y1 = y1;
+	this.g1 = g1;
+	this.staff = staff;
+	this.selected = false;
+	this.selectionPartners = [this];
+	this.addCompile = function(bufferData, sampleRate) {
+		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate);
+	};
+	this.draw = function() {
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		let vol0 = this.g0 * noteHeight;
+		let vol1 = this.g1 * noteHeight;
+		ctx.beginPath();
+		ctx.fillStyle = this.selected ? "rgba(204,136,0,.5)" : "rgba(0,0,0,.5)";
+		ctx.moveTo(left, h0 - vol0);
+		ctx.lineTo(left, h0 + vol0);
+		ctx.lineTo(right, h1 + vol1);
+		ctx.lineTo(right, h1 - vol1);
+		ctx.fill();
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.arc((left + right) / 2, (h0 + h1) / 2, noteHeight / 4, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	};
+	this.isClicked = function(ex, ey) {
+		if (currentStaff != this.staff) {
+			return false;
+		}
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		let vol0 = this.g0 * noteHeight;
+		let vol1 = this.g1 * noteHeight;
+		let g = (ex - left) / (right - left);
+		//concsole.log("not yet detected as clicked");
+		if (ex >= left && ex <= right && Math.abs(ey - lerp(h0, h1, g)) <= lerp(vol0, vol1, g)) {
+			//cocnsole.log("clicked");
+			return true;
+		}
+		/*let cx = (left + right) / 2;
+		let cy = (h0 + h1) / 2;
+		if ((ex - cx) ** 2 + (ey - cy) ** 2 < noteHeight ** 2 / 4) {
+			return true;
+		}*/
+		return false;
+	};
+	this.isInRange = function(ex0, ey0, ex1, ey1) {
+		if (currentStaff != this.staff) {
+			return false;
+		}
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		//let vol0 = this.g0 * noteHeight;
+		//let vol1 = this.g1 * noteHeight;
+		//let g = (ex - left) / (right - left);
+		let cx = (left + right) / 2;
+		let cy = (h0 + h1) / 2;
+		if (cx >= ex0 && cx <= ex1 && cy >= ey0 && cy <= ey1) {
+			return true;
+		}
+		return false;
+	};
+	this.select = function(d) {
+		for (partner of this.selectionPartners) {
+			partner.selected = true;
+		}
+		if (d) {
+			drawForeground();
+		}
+	}
+	this.deselect = function(d) {
+		this.selected = false;
+		if (d) {
+			drawForeground();
+		}
+	}
+	this.getString = function() {
+		return `n,${this.x0},${this.y0},${this.g0},${this.x1},${this.y1},${this.g1},${this.staff}`;
+	}
+}
+function Supernote(x0, y0, g0, x1, y1, g1, staff, basenotes) {
+	this.type = "supernote";
+	this.length = 1;
+	this.x0 = x0;
+	this.y0 = y0; // in half notes, A4 is 0
+	this.g0 = g0;
+	this.x1 = x1;
+	this.y1 = y1;
+	this.g1 = g1;
+	this.staff = staff;
+	this.selected = false;
+	this.baseNotes = [];
+	this.selectionPartners = [this];
+	if (!basenotes) {
+		for (let note of notes) {
+			if (note.selected) {
+				if (note.type == "note") {
+					this.baseNotes.push({
+						x0: note.x0,
+						y0: note.y0,
+						g0: note.g0,
+						x1: note.x1,
+						y1: note.y1,
+						g1: note.g1
+					});
+				}
+				else if (note.type == "supernote") {
+					//this.baseNotes = this.baseNotes.concat(note.baseNotes).slice();
+					for (let bnote of note.baseNotes) {
+						//this.baseNotes.push({bnote.x0 + this.x0, bnote.y0 + pitchShift, bnote.g0 * this.g0, bnote.x1 + this.x0, bnote.y1 + pitchShift, note.g1 * bthis.g1});
+					}
+				}
+			}
+		}
+		this.baseNoteStart = this.baseNotes[0].x0;
+		this.baseNoteStop = this.baseNotes[0].x1;
+		for (let i = 1; i < this.baseNotes.length; i++) {
+			this.baseNoteStart = this.baseNotes[i].x0 < this.baseNoteStart ? this.baseNotes[i].x0 : this.baseNoteStart;
+			this.baseNoteStop = this.baseNotes[i].x1 > this.baseNoteStop ? this.baseNotes[i].x1 : this.baseNoteStop;
+		}
+		let doman = (this.x1 - this.x0) / (this.baseNoteStop - this.baseNoteStart);
+		for (let i = 0; i < this.baseNotes.length; i++) {
+			this.baseNotes[i].x0 -= this.baseNoteStart;
+			this.baseNotes[i].x1 -= this.baseNoteStart;
+			this.baseNotes[i].x0 *= doman;
+			this.baseNotes[i].x1 *= doman;
+		}
+	}
+	else {
+		this.baseNotes = basenotes;
+	}
+	this.addCompile = function(bufferData, sampleRate) {
+		let pitchShift = this.y1 - this.y0;
+		for (let note of this.baseNotes) {
+			addCompile(note.x0 + this.x0, note.y0 + pitchShift, note.g0 * lerp(this.g0, this.g1, note.x0), note.x1 + this.x0, note.y1 + pitchShift, note.g1 * lerp(this.g0, this.g1, note.x1), this.staff, bufferData, sampleRate);
+		}
+	};
+	this.draw = function() {
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		let vol0 = this.g0 * noteHeight;
+		let vol1 = this.g1 * noteHeight;
+		ctx.beginPath();
+		ctx.fillStyle = this.selected ? "rgba(85,170,255,.5)" : "rgba(0,85,170,.5)";
+		ctx.moveTo(left, h0 - vol0);
+		ctx.lineTo(left, h0 + vol0);
+		ctx.lineTo(right, h1 + vol1);
+		ctx.lineTo(right, h1 - vol1);
+		ctx.fill();
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.arc((left + right) / 2, (h0 + h1) / 2, noteHeight / 4, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.closePath();
+	};
+	this.isClicked = function(ex, ey) {
+		if (currentStaff != this.staff) {
+			return false;
+		}
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		let vol0 = this.g0 * noteHeight;
+		let vol1 = this.g1 * noteHeight;
+		let g = (ex - left) / (right - left);
+		//concsole.log("not yet detected as clicked");
+		if (ex >= left && ex <= right && Math.abs(ey - lerp(h0, h1, g)) <= lerp(vol0, vol1, g)) {
+			//cocnsole.log("clicked");
+			return true;
+		}
+		/*let cx = (left + right) / 2;
+		let cy = (h0 + h1) / 2;
+		if ((ex - cx) ** 2 + (ey - cy) ** 2 < noteHeight ** 2 / 4) {
+			return true;
+		}*/
+		return false;
+	};
+	this.isInRange = function(ex0, ey0, ex1, ey1) {
+		if (currentStaff != this.staff) {
+			return false;
+		}
+		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
+		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
+		let left = this.x0 * beatWidth;
+		let right = this.x1 * beatWidth;
+		//let vol0 = this.g0 * noteHeight;
+		//let vol1 = this.g1 * noteHeight;
+		//let g = (ex - left) / (right - left);
+		let cx = (left + right) / 2;
+		let cy = (h0 + h1) / 2;
+		if (cx >= ex0 && cx <= ex1 && cy >= ey0 && cy <= ey1) {
+			return true;
+		}
+		return false;
+	};
+	this.select = function(d) {
+		this.selected = true;
+		if (d) {
+			drawForeground();
+		}
+	}
+	this.deselect = function(d) {
+		this.selected = false;
+		if (d) {
+			drawForeground();
+		}
+	}
+	this.getString = function() {
+		return '';
+		let initial = `g,${this.x0},${this.y0},${this.g0},${this.x1},${this.y1},${this.g1},${this.staff},[`;
+		return inital + "]";
+	}
+	this.draw();
+}
+let startNote = [];
+let startGrab = [];
+let selectionBox = [];
+let cursor = [0, 0];
+let boardCursor = [0, 0];
+let ebutton = -1;
+let previewStartTime = 0; // beats
+function boardMouseDown(e) {
+	e.preventDefault();
+}
+function boardMouseUp(e) {
+	e.preventDefault();
+	if (e.which == 1) {
+		
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].isClicked(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop)) {
+				//notes[i] = notes[notes.length - 1];
+				//notes.pop();
+				notes[i].selected = !notes[i].selected;
+			}
+			
+		}
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		drawForeground();
+	}
+}
+function selectUnderCursor(e) {
+	e.preventDefault();
+	if (e.which == 1 || e.which == 3) {
+		let b = e.which == 1 ? true : false;
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].isClicked(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop)) {
+				if (b) {
+					notes[i].select();
+				}
+				else {
+					notes[i].deselect();
+				}
+			}
+		}
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		drawForeground();
+	}
+	else { // set previewStartTime to the beat
+		previewStartTime = (e.pageX - canvas.offsetLeft) / beatWidth;
+	}
+}
+canvas.addEventListener("mousemove", function(e) {
+	cursor[0] = e.pageX;
+	cursor[1] = e.pageY;
+	//onsole.log("hi");
+	//selectUnderCursor(e);
+}, false);
+canvas.addEventListener("mousedown", function(e) {
+	ebutton = e.button;
+	selectionBox[0] = (e.pageX - canvas.offsetLeft);
+	selectionBox[1] = (e.pageY - canvas.offsetTop);
+	selectUnderCursor(e);
+}, false);
+canvas.addEventListener("mouseup", function(e) {
+	selectUnderCursor(e);
+	cursor[0] = e.pageX;
+	cursor[1] = e.pageY;
+	boardCursor[0] = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
+	boardCursor[1] = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
+	selectionBox[2] = (e.pageX - canvas.offsetLeft);
+	selectionBox[3] = (e.pageY - canvas.offsetTop);
+	let minX, maxX, minY, maxY;
+	if (ebutton == 0 || ebutton == 2) {
+		if (selectionBox[0] > selectionBox[2]) {
+			minX = selectionBox[2];
+			maxX = selectionBox[0];
+		}
+		else {
+			minX = selectionBox[0];
+			maxX = selectionBox[2];
+		}
+		if (selectionBox[1] > selectionBox[3]) {
+			minY = selectionBox[3];
+			maxY = selectionBox[1];
+		}
+		else {
+			minY = selectionBox[1];
+			maxY = selectionBox[3];
+		}
+		//onsole.log(minX, maxX, minY, maxY);
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].staff == currentStaff && notes[i].isInRange(minX, minY, maxX, maxY)) {
+				notes[i].selected = (ebutton == 0);
+			}
+		}
+	}
+}, false);
+addEventListener("mouseup", function(e) {
+	if (ebutton >= 0) {
+		drawForeground();
+	}
+	ebutton = -1;
+}, false);
+let addKeyPressed = false;
+let keys = {};
+for (let i = 0; i < 36; i++) {
+	keys["01233456789abcdefghijklmnopqrstuvwxyz"[i]] = false;
+}
+function addKeyHandler(b) {
+	if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
+		return;
+	}
+	let currentx = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
+	let currenty = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
+	if (!b) {
+		if (currentx > startNote[0]) {
+			notes.push(new Note(startNote[0], startNote[1], .5, currentx, currenty, .5, currentStaff));
+			notes[notes.length - 1].draw();
+		}
+	}
+	else {
+		startNote[0] = currentx;
+		startNote[1] = currenty;
+	}
+}
+// ~40 neurons per full moon of retina area
+canvas.addEventListener("contextmenu", function(e) {
+	e.preventDefault();
+}, false);
+let a = document.createElement("a");
+document.body.appendChild(a);
+a.innerHTML = "Download last-compiled version";
+a.style = "left: 10px; top: 50px; position: fixed; font: 30px monospace; padding-left: 6px; padding-right: 6px; border-radius: 16px;";
+function randHex() {
+	return "0123456789abcdef"[Math.floor(Math.random() * 16)];
+}
+let myArrayBuffer;
+let actx = new (window.AudioContext || window.webkitAudioContext)();
+function compile() {
+	myArrayBuffer = actx.createBuffer(2, actx.sampleRate * songLength * spg, actx.sampleRate);
+	for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
+		var nowBuffering = myArrayBuffer.getChannelData(channel);
+		for (let note of notes) {
+			note.addCompile(nowBuffering, actx.sampleRate);
+		}
+		
+	}
+	//onsole.log(myArrayBuffer.getChannelData(0));
+	/*for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
+		var nowBuffering = myArrayBuffer.getChannelData(channel);
+		for (let i = 1; i < nowBuffering.length; i++) {
+			let d = nowBuffering[i] - nowBuffering[i - 1];
+			if (Math.abs(d) > .3) {
+				nowBuffering[i] = nowBuffering[i - 1] - d * (d > 0 ? 1 : -1);
+			}
+		}
+	}*/
+	let url = URL.createObjectURL(bufferToWave(myArrayBuffer, actx.sampleRate * songLength * spg));
+	a.href = url;
+	a.download = randHex() + randHex() + randHex() + randHex() + ".wav";
+}
+function play() {
+	let newPreviewStartTime = Math.floor(previewStartTime * spg * actx.sampleRate); // in samples
+	let totalLength = myArrayBuffer.getChannelData(0).length; // in samples
+	let shortLength = totalLength - newPreviewStartTime;
+	let shortArrayBuffer = actx.createBuffer(2, shortLength, actx.sampleRate);
+	for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
+		var nowBuffering = myArrayBuffer.getChannelData(channel);
+		var nowLoading = shortArrayBuffer.getChannelData(channel);
+		for (let i = 0; i < shortLength; i++) {
+			nowLoading[i] = nowBuffering[i + newPreviewStartTime];
+		}
+	}
+	let source = actx.createBufferSource();
+	source.buffer = shortArrayBuffer;
+	source.connect(actx.destination);
+	source.start();
+	console.log(source);
+}
+// elements
+let compbutton = document.createElement("button");
+document.body.appendChild(compbutton);
+compbutton.onclick = compile;
+compbutton.innerHTML = "Compile";
+compbutton.style = "position: fixed; left: 10px; top: 10px; font: 30px monospace; border-radius: 16px;";
+let playbutton = document.createElement("button");
+document.body.appendChild(playbutton);
+playbutton.onclick = play;
+playbutton.innerHTML = "Play";
+playbutton.style = "position: fixed; left: 12rem; top: 10px; font: 30px monospace; border-radius: 16px;";
+let pre = document.createElement("pre");
+document.body.appendChild(pre);
+pre.innerHTML = "drag a rightward to add note\nleft click to select\nright click to deselect\nd to duplicate\ng to grab and move\nx to delete\n] and [ adjust snapping";
+pre.style = "position: fixed; left: 580px; top: -10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+let spgInput = document.createElement("input");
+spgInput.value = spg;
+document.body.appendChild(spgInput);
+spgInput.addEventListener("mouseout", function() {
+	spg = Number(spgInput.value);
+	this.blur();
+}, false);
+spgInput.style = "position: fixed; left: 820px; top: 10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+spgInput.placeholder = "seconds per group";
+let lenInput = document.createElement("input");
+document.body.appendChild(lenInput);
+lenInput.value = songLength;
+lenInput.style = "position: fixed; left: 820px; top: 30px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+lenInput.placeholder = "group count";
+lenInput.addEventListener("mouseout", function() {
+	songLength = Number(lenInput.value);
+	drawBackground();
+	drawForeground();
+	this.blur();
+}, false);
+let loadInput = document.createElement("input");
+document.body.appendChild(loadInput);
+loadInput.type = "file";
+loadInput.addEventListener("input", function() {
+	let file = loadInput.files[0];
+	let reader = new FileReader();
+	reader.onload = function(e) {
+		staves = [];
+		notes = [];
+		let str = e.target.result;
+		let strs = str.split("|");
+		let potato = strs[0].split(",");
+		songLength = Number(potato[1]);
+		spg = Number(potato[2]);
+		for (let i = 1; i < strs.length; i++) {
+			potato = strs[i].split(",");
+			if (potato[0] == "s") {
+				staves.push(new Staff(Number(potato[1]), Number(potato[2]), Number(potato[3])));
+			}
+			else if (potato[0] == "n") {
+				notes.push(new Note(Number(potato[1]), Number(potato[2]), Number(potato[3]), Number(potato[4]), Number(potato[5]), Number(potato[6]), Number(potato[7])));
+			}
+		}
+		currentStaff = 0;
+		//onsole.log(staves);
+		for (let i = staves.length; i < 10; i++) {
+			staves[i] = new Staff(0, -36, 12);
+		}
+		drawBackground();
+		drawForeground();
+	}
+	reader.readAsText(file);
+}, false);
+loadInput.style = "position: fixed; left: 1000px; top: 10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+function grabKeyHandler(b) {
+	if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
+		return;
+	}
+	let currentx = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
+	let currenty = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
+	if (b) {
+		startGrab[0] = currentx;
+		startGrab[1] = currenty;
+	}
+	else {
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].selected) {
+				let dx = currentx - startGrab[0];
+				let dy = currenty - startGrab[1];
+				notes[i].x0 += dx;
+				notes[i].x1 += dx;
+				notes[i].y0 += dy;
+				notes[i].y1 += dy;
+			}
+		}
+		drawForeground();
+	}
+}
+function deleteSelected() {
+	for (let i = 0; i < notes.length; i++) {
+		if (notes[i].selected) {
+			for (let note2 of notes[i].selectionPartners) {
+				for (let i = 0; i < note2.selectionPartners.length; i++) {
+					if (note2.selectionPartners[i] == notes[i]) {
+						note2.selectionPartners[i] = note2.selectionPartners[note2.selectionPartners.length - 1];
+						note2.selectionPartners.pop();
+						break;
+					}
+				}
+			}
+			notes[i] = notes[notes.length - 1];
+			notes.pop();
+			i--;
+		}
+	}
+		
+	drawForeground();
+}
+function revolumeSelection(right, vol) {
+	let side = right ? "g1" : "g0";
+	let notside = right ? "g0" : "g1";
+	for (let i = 0; i < notes.length; i++) {
+		if (notes[i].selected) {
+			notes[i][side] += vol;
+			if (notes[i].g0 < .001 && notes[i].g1 < .001) {
+				notes[i][side] -= vol;
+			}
+			//onsole.log(side, notside);
+		}
+	}
+	drawForeground();
+}
+let saveA = document.createElement("a");
+function saveBoard() {
+	let str = `0,${songLength},${spg}`;
+	for (let i = 0; i < staves.length; i++) {
+		str += `|s,${staves[i].instrument},${staves[i].lowNote},${staves[i].highNote}`;
+	}
+	for (let i = 0; i < notes.length; i++) {
+		str += "|" + notes[i].getString();
+	}
+	let url = URL.createObjectURL(new Blob([str]));
+	saveA.href = url;
+	saveA.download = "pancakesoundprojectfile_" + randHex() + randHex() + randHex() + randHex() + ".pspf";
+	document.body.appendChild(saveA);
+	saveA.click();
+	setTimeout(function() {
+		document.body.removeChild(saveA);
+		URL.revokeObjectURL(url);
+	});
+}
+let wStartCoords = [];
+addEventListener("keyup", function(e) {
+	keys[e.key] = false;
+	if (e.key == "x") {
+		deleteSelected();
+	}
+	else if (e.key == "w") {
+		notes.push(new Supernote(wStartCoords[0], wStartCoords[1], 1, boardCursor[0], boardCursor[1], 1, currentStaff));
+	}
+	else if (e.key == "g") {
+		grabKeyHandler(false);
+	}
+	/*else if (e.key == "c") {
+		clipboard = [];
+		clipboard.length = maxY - minY + 1;
+		for (let i = 0; i < clipboard.length; i++) {
+			clipboard[i] = [];
+			clipboard[i].length = maxX - minX + 1;
+			clipboard[i].fill(0);
+		}
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].x >= minX && notes[i].x <= maxX && notes[i].y >= minY && notes[i].y <= maxY) {
+				clipboard[notes[i].y - minY][notes[i].x - minX] = 1;
+			}
+		}
+		//copier.value = JSON.stringify(clipboard);
+	}
+	else if (e.key == "v") {
+		if (clipboard.length == maxY - minY + 1 && clipboard[0].length == maxX - minX + 1) { // if selection is equal to clipboard
+			for (let y = 0; y < clipboard.length; y++) {
+				for (let x = 0; x < clipboard[y].length; x++) {
+					if (clipboard[y][x]) {
+						notes.push(newNote(x + minX, y + minY));
+					}
+				}
+			}
+		}
+		else if (clipboard.length > 0 && clipboard[0].length > 0) { // if there even is a clipboard
+			maxX = minX + clipboard[0].length - 1;
+			maxY = minY + clipboard.length - 1;
+			boxSelection[0] = minX;
+			boxSelection[1] = minY;
+			boxSelection[2] = maxX;
+			boxSelection[3] = maxY;
+			selectionDiv.style.left = minX * noteWidth + bgcanvas.offsetLeft + "px";
+			selectionDiv.style.top = minY * noteHeight + bgcanvas.offsetTop + "px";
+			selectionDiv.style.width = (maxX - minX + 1) * noteWidth + "px";
+			selectionDiv.style.height = (maxY - minY + 1) * noteHeight + "px";
+		}
+	}
+	else if (e.key == "s") { // from someone else, basically
+		let wholeboard = [];
+		for (let i = 0; i < notes.length; i++) {
+			wholeboard[i] = [
+				notes[i].x0,
+				notes[i].y0,
+				notes[i].g0,
+				notes[i].x1,
+				notes[i].y1,
+				notes[i].g1,
+				notes[i].staff
+			];
+		}
+		let file = new Blob([songLength + "|" + JSON.stringify(boardSettings) + "|" + JSON.stringify(wholeboard)], {type: "text/plain"});
+		let tempA = document.createElement("a");
+		let url = URL.createObjectURL(file);
+		tempA.href = url;
+		tempA.download = "save " + randHex() + randHex() + randHex() + randHex();
+		document.body.appendChild(tempA);
+		tempA.click();
+		setTimeout(function() {
+			document.body.removeChild(tempA);
+			URL.revokeObjectURL(url);
+		}, 0);
+	}*/
+	else if (e.key == "[") {
+		snap *= 2;
+		drawBackground();
+	}
+	else if (e.key == "]") {
+		snap /= 2;
+		drawBackground();
+	}
+	else if (e.key == "a") {
+		addKeyHandler(false);
+	}
+}, false);
+addEventListener("keydown", function(e) {
+	if (keys[e.key]) {
+		return;
+	}
+	else {
+		keys[e.key] = true;
+	}
+	if (e.key == "a") {
+		addKeyHandler(true);
+	}
+	else if (e.key == "j") {
+		revolumeSelection(0, -snapvol);
+	}
+	else if (e.key == "e") {
+		let list = [];
+		for (let note of notes) {
+			if (note.selected) {
+				list.push(note);
+			}
+		}
+		for (let note of list) {
+			note.selectionPartners = list;
+		}
+	}
+	else if (e.key == "w") {
+		/*let list = [];
+		for (let note of notes) {
+			if (note.selected) {
+				list.push(note);
+			}
+		}
+		for (let note of list) {
+			for (let note2 of note.selectionPartners) {
+				for (let i = 0; i < note2.selectionPartners.length; i++) {
+					if (note2.selectionPartners[i] == note) {
+						note2.selectionPartners[i] = note2.selectionPartners[note2.selectionPartners.length - 1];
+						note2.selectionPartners.pop();
+						break;
+					}
+				}
+			}
+			note.selectionPartners = [note];
+		}*/
+		wStartCoords[0] = boardCursor[0];
+		wStartCoords[1] = boardCursor[1];
+	}
+	else if (e.key == "u") {
+		revolumeSelection(0, snapvol);
+	}
+	else if (e.key == "i") {
+		revolumeSelection(1, snapvol);
+	}
+	else if (e.key == "k") {
+		revolumeSelection(1, -snapvol);
+	}
+	else if (e.key == "g") {
+		grabKeyHandler(true);
+	}
+	else if (e.key == "s") {
+		saveBoard();
+	}
+	else if (e.key == "r") {
+		for (let i = 0; i < notes.length; i++) {
+			notes[i].selected = false;
+		}
+		drawForeground();
+	}
+	else if (e.key == "d") {
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].selected) {
+				if (notes[i].type == "note") {
+					notes.push(new Note(notes[i].x0, notes[i].y0, notes[i].g0, notes[i].x1, notes[i].y1, notes[i].g1, notes[i].staff));
+				}
+				else if (notes[i].type = "supernote") {
+					let supnote = new Supernote(notes[i].x0, notes[i].y0, notes[i].g0, notes[i].x1, notes[i].y1, notes[i].g1, notes[i].staff, notes[i].baseNotes);
+					notes.push(supnote);
+				}
+				notes[notes.length - 1].draw();
+			}
+		}
+	}
+	else if (/\d/.test(e.key[0])) {
+		lastStaff = currentStaff;
+		currentStaff = Number(e.key[0]);
+		for (let i = 0; i < notes.length; i++) {
+			if (notes[i].selected) {
+				notes[i].staff = currentStaff;
+			}
+		}
+		drawBackground();
+		drawForeground();
+	}
+}, false);
+		</script>
+	</body>
+</html>
