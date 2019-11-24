@@ -23,7 +23,7 @@ button:active {
 		</style>
 	</head>
 	<body>
-		<script id="script">
+		<script>
 // to do: include staff in another, in-editor length editing
 let songLength = 12; // beats
 let snap = 4; // in 1/beats
@@ -56,9 +56,11 @@ let staves = [];
 let notes = [];
 let currentStaff = 0;
 let lastStaff = 0;
+let beatDisplay = Math.floor((window.innerWidth - canvas.offsetLeft) / beatWidth);
+let beatDisplayOffset = 0;
 function drawBackground() {
 	let boardHeight = staves[currentStaff].highNote - staves[currentStaff].lowNote + 1;
-	bgcanvas.width = beatWidth * songLength; // this clears bgcanvas
+	bgcanvas.width = beatWidth * beatDisplay; // this clears bgcanvas
 	bgcanvas.height = noteHeight * boardHeight;
 	for (let i = 0; i < boardHeight; i++) {
 		let note = (i - staves[currentStaff].highNote + 119) % 12; // A,A#...
@@ -71,7 +73,7 @@ function drawBackground() {
 		bgctx.fillRect(0, i * noteHeight, bgcanvas.width, 1);
 		bgctx.closePath();
 	}
-	for (let i = 0; i < songLength * snap; i++) {
+	for (let i = 0; i < beatDisplay * snap; i++) {
 		bgctx.beginPath();
 		bgctx.fillStyle = i % snap == 0 ? "#000" : "#aaa";
 		bgctx.fillRect(i * beatWidth / snap, 0, 1, bgcanvas.height);
@@ -81,7 +83,7 @@ function drawBackground() {
 function drawForeground() {
 	let boardHeight = staves[currentStaff].highNote - staves[currentStaff].lowNote + 1;
 	//drawBackground();
-	canvas.width = beatWidth * songLength; // this clears bgcanvas
+	canvas.width = beatWidth * beatDisplay; // this clears bgcanvas
 	canvas.height = noteHeight * boardHeight;
 	for (let i = 0; i < notes.length; i++) {
 		if (notes[i].staff == currentStaff) {
@@ -177,7 +179,7 @@ let instruments = [
 			sum += instrument0data[Math.floor((currentIndex + n * wavelen))];
 		}
 		if (isNaN(sum)) {
-			console.log(sum, wavelen, currentIndex, startN, endN);
+			//onsole.log(sum, wavelen, currentIndex, startN, endN);
 		}
 		return sum * 2;
 	},
@@ -242,7 +244,7 @@ function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate, rampO
 		}
 		bufferData[i] += bufVal;
 	}
-	console.log(x0, y0, g0, x1, y1, g1, staff);
+	//onsole.log(x0, y0, g0, x1, y1, g1, staff);
 }
 function Note(x0, y0, g0, x1, y1, g1, staff) { // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	this.type = "note";
@@ -258,14 +260,14 @@ function Note(x0, y0, g0, x1, y1, g1, staff) { // ------------------------------
 	this.selectionPartners = [this];
 	this.addCompile = function(bufferData, sampleRate) {
 		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate, true, true);
-		console.log("add-compiled note", this.g0, this.g1, this.x0, this.x1);
+		//onsole.log("add-compiled note", this.g0, this.g1, this.x0, this.x1);
 	};
 	this.addCompile(fancyBufferData, actx.sampleRate);
 	this.draw = function() {
 		let h0 = (staves[this.staff].highNote - this.y0 + .5) * noteHeight;
 		let h1 = (staves[this.staff].highNote - this.y1 + .5) * noteHeight;
-		let left = this.x0 * beatWidth;
-		let right = this.x1 * beatWidth;
+		let left = (this.x0 - beatDisplayOffset) * beatWidth;
+		let right = (this.x1 - beatDisplayOffset) * beatWidth;
 		let vol0 = this.g0 * noteHeight;
 		let vol1 = this.g1 * noteHeight;
 		ctx.beginPath();
@@ -484,31 +486,12 @@ let cursor = [0, 0];
 let boardCursor = [0, 0];
 let ebutton = -1;
 let previewStartTime = 0; // beats
-function boardMouseDown(e) {
-	e.preventDefault();
-}
-function boardMouseUp(e) {
-	e.preventDefault();
-	if (e.which == 1) {
-		
-		for (let i = 0; i < notes.length; i++) {
-			if (notes[i].isClicked(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop)) {
-				//notes[i] = notes[notes.length - 1];
-				//notes.pop();
-				notes[i].selected = !notes[i].selected;
-			}
-			
-		}
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		drawForeground();
-	}
-}
 function selectUnderCursor(e) {
 	e.preventDefault();
 	if (e.which == 1 || e.which == 3) {
 		let b = e.which == 1 ? true : false;
 		for (let i = 0; i < notes.length; i++) {
-			if (notes[i].isClicked(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop)) {
+			if (notes[i].isClicked(e.pageX + beatDisplayOffset * beatWidth - canvas.offsetLeft, e.pageY - canvas.offsetTop)) {
 				if (b) {
 					notes[i].select();
 				}
@@ -521,28 +504,28 @@ function selectUnderCursor(e) {
 		drawForeground();
 	}
 	else { // set previewStartTime to the beat
-		previewStartTime = (e.pageX - canvas.offsetLeft) / beatWidth;
+		previewStartTime = (e.pageX - canvas.offsetLeft) / beatWidth + beatDisplayOffset;
 	}
 }
 canvas.addEventListener("mousemove", function(e) {
-	cursor[0] = e.pageX;
+	cursor[0] = e.pageX + beatDisplayOffset * beatWidth;
 	cursor[1] = e.pageY;
 	//onsole.log("hi");
 	//selectUnderCursor(e);
 }, false);
 canvas.addEventListener("mousedown", function(e) {
 	ebutton = e.button;
-	selectionBox[0] = (e.pageX - canvas.offsetLeft);
+	selectionBox[0] = (e.pageX + beatDisplayOffset * beatWidth - canvas.offsetLeft);
 	selectionBox[1] = (e.pageY - canvas.offsetTop);
 	selectUnderCursor(e);
 }, false);
 canvas.addEventListener("mouseup", function(e) {
 	selectUnderCursor(e);
-	cursor[0] = e.pageX;
+	cursor[0] = e.pageX + beatDisplayOffset * beatWidth;
 	cursor[1] = e.pageY;
 	boardCursor[0] = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
 	boardCursor[1] = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
-	selectionBox[2] = (e.pageX - canvas.offsetLeft);
+	selectionBox[2] = (e.pageX + beatDisplayOffset * beatWidth - canvas.offsetLeft);
 	selectionBox[3] = (e.pageY - canvas.offsetTop);
 	let minX, maxX, minY, maxY;
 	if (ebutton == 0 || ebutton == 2) {
@@ -582,9 +565,10 @@ for (let i = 0; i < 36; i++) {
 	keys["01233456789abcdefghijklmnopqrstuvwxyz"[i]] = false;
 }
 function addKeyHandler(b) {
-	if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
+	//onsole.log("add key handler fired", cursor);
+	/*if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
 		return;
-	}
+	}*/
 	let currentx = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
 	let currenty = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
 	if (!b) {
@@ -670,7 +654,7 @@ function compile() { // --------------------------------------------------------
 				for (let j = 1; j < d; j++) {
 					nowBuffering[i + j] = nowBuffering[i + j] * (1 - a) + nowBuffering[i + j - 1] * a;
 				}
-				console.log("aah at " + (i / actx.sampleRate / spg), i);
+				console.og("aah at " + (i / actx.sampleRate / spg), i);
 			}
 		}*/
 		
@@ -691,7 +675,7 @@ function compile() { // --------------------------------------------------------
 }
 function play() {
 	let newPreviewStartTime = Math.floor(previewStartTime * spg * actx.sampleRate); // in samples
-	let totalLength = myArrayBuffer.getChannelData(0).length; // in samples
+	let totalLength = myArrayBuffer.length; // in samples
 	let shortLength = totalLength - newPreviewStartTime;
 	let shortArrayBuffer = actx.createBuffer(2, shortLength, actx.sampleRate);
 	for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
@@ -705,7 +689,6 @@ function play() {
 	source.buffer = shortArrayBuffer;
 	source.connect(actx.destination);
 	source.start();
-	console.log(source);
 }
 // elements
 let compbutton = document.createElement("button");
@@ -778,6 +761,7 @@ loadInput.addEventListener("input", function() {
 		lenInput.value = songLength;
 		spg = Number(potato[2]);
 		spgInput.value = spg;
+		fancyBufferData.length = 0;
 		updateFancyBuffer();
 		for (let i = 1; i < strs.length; i++) {
 			potato = strs[i].split(",");
@@ -800,9 +784,9 @@ loadInput.addEventListener("input", function() {
 }, false);
 loadInput.style = "position: fixed; left: 1000px; top: 10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
 function grabKeyHandler(b) {
-	if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
+	/*if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
 		return;
-	}
+	}*/
 	let currentx = Math.round((cursor[0] - canvas.offsetLeft) / beatWidth * snap) / snap;
 	let currenty = staves[0].highNote - Math.floor((cursor[1] - canvas.offsetTop) / noteHeight);
 	if (b) {
@@ -897,6 +881,7 @@ function saveBoard() {
 let wStartCoords = [];
 addEventListener("keyup", function(e) {
 	keys[e.key] = false;
+	console.log(e.key + " depressed");
 	if (e.key == "x") {
 		deleteSelected();
 	}
@@ -982,7 +967,22 @@ addEventListener("keyup", function(e) {
 	}
 }, false);
 addEventListener("keydown", function(e) {
+	console.log(e.key + " pressed");
 	if (keys[e.key]) {
+		if (e.key == "ArrowLeft") {
+			beatDisplayOffset--;
+			if (beatDisplayOffset < 0) {
+				beatDisplayOffset = 0;
+			}
+			drawForeground();
+		}
+		else if (e.key == "ArrowRight") {
+			beatDisplayOffset++;
+			if (beatDisplayOffset + beatDisplay > songLength) {
+				beatDisplayOffset = songLength - beatDisplay;
+			}
+			drawForeground();
+		}
 		return;
 	}
 	else {
@@ -990,6 +990,20 @@ addEventListener("keydown", function(e) {
 	}
 	if (e.key == "a") {
 		addKeyHandler(true);
+	}
+	else if (e.key == "ArrowLeft") {
+		beatDisplayOffset--;
+		if (beatDisplayOffset < 0) {
+			beatDisplayOffset = 0;
+		}
+		drawForeground();
+	}
+	else if (e.key == "ArrowRight") {
+		beatDisplayOffset++;
+		if (beatDisplayOffset + beatDisplay > songLength) {
+			beatDisplayOffset = songLength - beatDisplay;
+		}
+		drawForeground();
 	}
 	else if (e.key == "j") {
 		revolumeSelection(0, -snapvol);
