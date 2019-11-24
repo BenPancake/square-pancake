@@ -146,7 +146,7 @@ function bufferToWave(abuffer, len) {
 let shtep = 2 ** (1/12);
 let instruments = [
 	function(t, f) {
-		return ((t * f) % 1) * 2 - 1;
+		//return ((t * f) % 1) * 2 - 1;
 		//return Math.sin(t * f * 2 * Math.PI);
 		/* imagine an infinite amount of datas on a graph, and they start at multiples of f * actx.sampleRate.
 		sum up the relevant ones, which start at most 300 before the starting buffer index.
@@ -215,7 +215,8 @@ function fancerp(a, b, g) {
 }
 function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate, rampOn, rampOff) {
 	let start = Math.floor(x0 * sampleRate * spg);
-	let end = Math.min(Math.floor(x1 * sampleRate * spg), fancyBufferData.length - 1);
+	let r = .05;
+	let end = Math.min(Math.floor(x1 * sampleRate * spg + r * actx.sampleRate), fancyBufferData.length - 1);
 	let duration = end - start;
 	let startFreq = noteToFreq(y0);
 	let endFreqThing = noteToFreq(y1) - startFreq;
@@ -225,7 +226,6 @@ function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate, rampO
 		let freq = endFreqThing * g / 2 + startFreq;
 		let fofx = t * freq;
 		let bufVal = instruments[staves[staff].instrument](t, freq) * lerp(g0, g1, g) / 16;
-		let r = .02;
 		if (rampOn) {
 			if (t < r) {
 				bufVal *= t / r;
@@ -244,7 +244,7 @@ function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate, rampO
 	}
 	console.log(x0, y0, g0, x1, y1, g1, staff);
 }
-function Note(x0, y0, g0, x1, y1, g1, staff) {
+function Note(x0, y0, g0, x1, y1, g1, staff) { // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	this.type = "note";
 	this.length = 1;
 	this.x0 = x0;
@@ -257,7 +257,7 @@ function Note(x0, y0, g0, x1, y1, g1, staff) {
 	this.selected = false;
 	this.selectionPartners = [this];
 	this.addCompile = function(bufferData, sampleRate) {
-		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate, false, false);
+		addCompile(this.x0, this.y0, this.g0, this.x1, this.y1, this.g1, this.staff, bufferData, sampleRate, true, true);
 		console.log("add-compiled note", this.g0, this.g1, this.x0, this.x1);
 	};
 	this.addCompile(fancyBufferData, actx.sampleRate);
@@ -339,7 +339,7 @@ function Note(x0, y0, g0, x1, y1, g1, staff) {
 	this.getString = function() {
 		return `n,${this.x0},${this.y0},${this.g0},${this.x1},${this.y1},${this.g1},${this.staff}`;
 	}
-} // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+}
 function Supernote(x0, y0, g0, x1, y1, g1, staff, basenotes) {
 	this.type = "supernote";
 	this.length = 1;
@@ -613,6 +613,9 @@ let actx = new (window.AudioContext || window.webkitAudioContext)();
 let myArrayBuffer;
 fancyBufferData.length = Math.floor(actx.sampleRate * songLength * spg);
 fancyBufferData.fill(0);
+function clampy(y) {
+	return y < -1 ? -1 : y > 1 ? 1 : y;
+}
 function updateFancyBuffer() {
 	let previousLength = fancyBufferData.length;
 	fancyBufferData.length = Math.floor(actx.sampleRate * songLength * spg);
@@ -620,7 +623,7 @@ function updateFancyBuffer() {
 		fancyBufferData[i] = 0;
 	}
 }
-function compile() {
+function compile() { // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	myArrayBuffer = actx.createBuffer(2, fancyBufferData.length, actx.sampleRate);
 	for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
 		var nowBuffering = myArrayBuffer.getChannelData(channel);
@@ -630,6 +633,46 @@ function compile() {
 		for (let i = 0; i < fancyBufferData.length; i++) {
 			nowBuffering[i] = fancyBufferData[i];
 		}
+		/*let d = 200;
+		let a = .97;
+		for (let i = 0; i < d; i++) {
+			nowBuffering[i] *= i / d;
+		}
+		for (let i = d; i < fancyBufferData.length; i++) {
+			if (Math.abs(nowBuffering[i] + nowBuffering[i - 2] - 2 * nowBuffering[i - 1]) > .01) { // a disturbance in the force of what the microphone is being told, must smooth
+				/*let dif = 400;
+				let pointLeft = -2;
+				let pointRight = 0;
+				// y = bx + a
+				let bleft = (nowBuffering[i + pointLeft] - nowBuffering[i + pointLeft - dif]) / dif;
+				let aleft = nowBuffering[i + pointLeft];
+				let bright = (nowBuffering[i + pointRight] - nowBuffering[i + pointRight + dif]) / dif;
+				let aright = nowBuffering[i + pointRight];
+				for (let j = -dif + pointLeft; j < dif + pointRight; j++) {
+					nowBuffering[i + j] = fancerp(clampy(bleft * j + aleft), clampy(bright * j + aright), j / dif / 2 + 1);
+				}*/
+				//i += dif * 2;
+				/*let dif = 100;
+				let pointLeft = -2;
+				let pointRight = 0;
+				// y = bx + a
+				let bleft = (nowBuffering[i - dif + 1] - nowBuffering[i - dif - 1]) / 2;
+				let aleft = nowBuffering[i - dif];
+				let bright = (nowBuffering[i + dif + 1] - nowBuffering[i + dif - 1]) / 2;
+				let aright = nowBuffering[i + dif];
+				for (let j = -dif + 1; j < dif; j++) {
+					nowBuffering[i + j] = fancerp(bleft * (j + dif) + aleft, bright * (j - dif) + aright, j / dif / 2 + 1);
+				}
+				nowBuffering[i] = nowBuffering[i] * .99 + nowBuffering[i - 1] * .01;
+				for (let j = -1; j > -d; j--) {
+					nowBuffering[i + j] = nowBuffering[i + j] * (1 - a) + nowBuffering[i + j + 1] * a;
+				}
+				for (let j = 1; j < d; j++) {
+					nowBuffering[i + j] = nowBuffering[i + j] * (1 - a) + nowBuffering[i + j - 1] * a;
+				}
+				console.log("aah at " + (i / actx.sampleRate / spg), i);
+			}
+		}*/
 		
 	}
 	//onsole.log(myArrayBuffer.getChannelData(0));
