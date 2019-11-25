@@ -156,7 +156,7 @@ function bufferToWave(abuffer, len) {
 }
 let shtep = 2 ** (1/12);
 let instruments = [
-	function(t, f) {
+	function(i, sampleRate, f) {
 		//return ((t * f) % 1) * 2 - 1;
 		//return Math.sin(t * f * 2 * Math.PI);
 		/* imagine an infinite amount of datas on a graph, and they start at multiples of f * actx.sampleRate.
@@ -181,7 +181,7 @@ let instruments = [
 		*/
 		let sum = 0;
 		let wavelen = Math.floor(actx.sampleRate / f);
-		let currentIndex = Math.floor(t * actx.sampleRate);
+		let currentIndex = i;
 		let startN = Math.ceil(-currentIndex / wavelen);
 		let endN = Math.floor((synthv.length - currentIndex - 1) / wavelen);
 		for (let n = startN; n <= endN; n++) {
@@ -236,7 +236,7 @@ function addCompile(x0, y0, g0, x1, y1, g1, staff, bufferData, sampleRate) {
 		let g = (i - start) / duration;
 		let freq = endFreqThing * g / 2 + startFreq;
 		let fofx = t * freq;
-		let bufVal = instruments[staves[staff].instrument](t, freq) * lerp(g0, g1, g);
+		let bufVal = instruments[staves[staff].instrument](i, sampleRate, freq) * lerp(g0, g1, g);
 		if (true) {
 			if (t < r) {
 				bufVal *= t / r;
@@ -735,13 +735,7 @@ Known bugs:
 When you move a note off the screen, and then increase
 the duration of the song to include the note, the
 array isn't updated to include the note.
-Workaround: save the file and reopen.
-
-There's a buzzing in the background.
-Workaround: none, I can't seem to get rid of it.
-Maybe uncomment the line which includes
-return ((t * f) % 1) * 2 - 1;
-in order to switch to the sawtooth instrument.`;
+Workaround: save the file and reopen.`;
 pre.innerHTML = "Controls (click here)";
 pre.addEventListener("click", function() {
 	if (pre.innerHTML == "Controls (click here)") {
