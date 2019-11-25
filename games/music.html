@@ -65,7 +65,7 @@ let staves = [];
 let notes = [];
 let currentStaff = 0;
 let lastStaff = 0;
-let beatDisplay = Math.floor((window.innerWidth - canvas.offsetLeft) / beatWidth);
+let beatDisplay = Math.min(Math.floor((window.innerWidth - canvas.offsetLeft) / beatWidth), songLength);
 let beatDisplayOffset = 0;
 function drawBackground() {
 	let boardHeight = staves[currentStaff].highNote - staves[currentStaff].lowNote + 1;
@@ -763,6 +763,7 @@ lenInput.style = "position: fixed; left: 820px; top: 30px; font: 12px monospace;
 lenInput.placeholder = "group count";
 lenInput.addEventListener("mouseout", function() {
 	songLength = Number(lenInput.value);
+	beatDisplay = Math.min(Math.floor((window.innerWidth - canvas.offsetLeft) / beatWidth), songLength);
 	updateFancyBuffer();
 	drawBackground();
 	drawForeground();
@@ -782,6 +783,7 @@ loadInput.addEventListener("input", function() {
 		let potato = strs[0].split(",");
 		songLength = Number(potato[1]);
 		lenInput.value = songLength;
+		beatDisplay = Math.min(Math.floor((window.innerWidth - canvas.offsetLeft) / beatWidth), songLength);
 		spg = Number(potato[2]);
 		spgInput.value = spg;
 		fancyBufferData.length = 0;
