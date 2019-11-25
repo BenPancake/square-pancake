@@ -1,0 +1,213 @@
+/*Meyerweb reset*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	/*margin: 0;
+	padding: 0;
+	border: 0;*/
+	font-size: 100%;
+	/*font: inherit;
+	vertical-align: baseline;*/
+}
+h1 {
+	font-size: 2em;
+}
+h2 {
+	font-size: 1.5em;
+}
+h3 {
+	font-size: 1.17em;
+}
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1.5;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+
+:root {
+	--clr-text: #edb;
+	--clr-back: #012;
+	--clr-a-text: #aaa;
+	--clr-a-back: #123;
+	--clr-pre-back: #024;
+	--clr-quote-bar: #ba9;
+	--clr-button-border: #aaa;
+	
+	--clr-red-fg: #fa9;
+	--clr-red-bg: #610;
+	--clr-green-fg: #dd9;
+	--clr-green-bg: #440;
+	--clr-yellow-fg: #fd9;
+	--clr-yellow-bg: #750;
+	--clr-blue-fg: #cdc;
+	--clr-blue-bg: #244;
+	--clr-purple-fg: #ecc;
+	--clr-purple-bg: #534;
+	--clr-aqua-fg: #ceb;
+	--clr-aqua-bg: #354;
+	--clr-orange-fg: #fc8;
+	--clr-orange-bg: #730;
+	
+	--clr-selected-bg: #edb;
+	--clr-selected-fg: #024;
+	
+	--padding-universal: .7em;
+}
+
+main {
+	font-family: monospace;
+	max-width: 50rem;
+	padding: 3rem;
+	margin: auto;
+}
+
+html {
+	width: 100%;
+	height: 100%;
+}
+
+::selection {
+	background: var(--clr-selected-bg);
+	color: var(--clr-selected-fg);
+}
+
+body {
+	color: var(--clr-text);
+	background: var(--clr-back);
+	/*background:
+		repeating-linear-gradient( 0deg, var(--clr-back), var(--clr-back) 2em, var(--clr-pre-back) 2em, var(--clr-pre-back) 4em);*/
+		
+	/*background-image:
+		linear-gradient(45deg, #012 25%, transparent 25%),
+		linear-gradient(135deg, #012 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #012 75%),
+		linear-gradient(135deg, transparent 75%, #012 75%);
+	background-size: 4em 4em;
+	background-position: 0 0, 2em 0, 2em -2em, 0em 2em;*/
+}
+
+:root {
+	scrollbar-color: var(--clr-text) var(--clr-back);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--clr-back);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--clr-text);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--clr-text);
+}
+
+pre {
+	border: 0;
+	tab-size: 4;
+	white-space: pre-wrap;
+}
+
+pre, .red, .green, .yellow, .blue, .aqua, .purple, .orange {
+	padding: var(--padding-universal);
+}
+
+code, pre, blockquote {
+	background-color: var(--clr-pre-back);
+}
+
+a, a:active, a:visited {
+	color: var(--clr-a-text);
+	background-color: var(--clr-a-back);
+}
+
+blockquote {
+	border-left: 5px solid var(--clr-quote-bar);
+	padding: var(--padding-universal) 10px;
+	margin: 1em 10px;
+	margin-right: 0;
+}
+
+button { /* to be styled with a color */
+	border: 5px solid var(--clr-quote-bar);
+	font-size: 100%;
+}
+
+input, textarea, button {
+	font-family: inherit;
+}
+
+hr {
+	border: 2px solid var(--clr-quote-bar);
+}
+
+.red {
+	color: var(--clr-red-fg);
+	background: var(--clr-red-bg);
+	border-color: var(--clr-red-fg);
+}
+
+.green {
+	color: var(--clr-green-fg);
+	background: var(--clr-green-bg);
+	border-color: var(--clr-green-fg);
+}
+
+.yellow {
+	color: var(--clr-yellow-fg);
+	background: var(--clr-yellow-bg);
+	border-color: var(--clr-yellow-fg);
+}
+
+.blue {
+	color: var(--clr-blue-fg);
+	background: var(--clr-blue-bg);
+	border-color: var(--clr-blue-fg);
+}
+
+.purple {
+	color: var(--clr-purple-fg);
+	background: var(--clr-purple-bg);
+	border-color: var(--clr-purple-fg);
+}
+
+.aqua {
+	color: var(--clr-aqua-fg);
+	background: var(--clr-aqua-bg);
+	border-color: var(--clr-aqua-fg);
+}
+
+.orange {
+	color: var(--clr-orange-fg);
+	background: var(--clr-orange-bg);
+	border-color: var(--clr-orange-fg);
+}
