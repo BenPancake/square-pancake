@@ -3330,6 +3330,11 @@ rgb(148, 255, 219)
 rgb(179, 233, 234)
 https://vignette.wikia.nocookie.net/mlp/images/d/d5/Lyra_Heartstrings_Pegasus_ID_S2E22.png/revision/latest?cb=20141214163204
 
+Mare Do Well
+rgb(33, 50, 93)
+rgb(102, 53, 144)
+https://vignette.wikia.nocookie.net/mlp/images/5/58/Mare_Do_Well_with_Wings_S2E08.png/revision/latest?cb=20120914220231
+
 Meadow Song
 rgb(198, 122, 78)
 rgb(236, 223, 161)
@@ -3998,7 +4003,7 @@ https://vignette.wikia.nocookie.net/mlp/images/3/30/Rumble_ID_S7E21.png/revision
 Sandbar
 rgb(230, 250, 183)
 rgb(95, 221, 221)
-See Sandbar.
+https://vignette.wikia.nocookie.net/mlp/images/8/8d/Sandbar_ID_S8E2.png/revision/latest?cb=20180328212530
 
 Silver Spoon
 rgb(118, 135, 152)
@@ -6474,6 +6479,11 @@ Mane-iac
 rgb(77, 78, 153)
 rgb(0, 158, 71)
 https://vignette.wikia.nocookie.net/mlp/images/6/6e/Mane-iac_ID_S4E06.png/revision/latest?cb=20140709180209
+
+Mare Do Well
+rgb(33, 50, 93)
+rgb(102, 53, 144)
+https://vignette.wikia.nocookie.net/mlp/images/6/66/Mare_Do_Well_ID_S2E8.png/revision/latest?cb=20160413205755
 
 Pinkie's sister, Maud Pie
 rgb(194, 192, 200)
@@ -9398,7 +9408,7 @@ https://vignette.wikia.nocookie.net/mlp/images/a/a4/Helia_Earth_pony_id_S03E02.p
 Juniper Montage
 rgb(253, 252, 196)
 rgb(0, 112, 138)
-See Juniper Montage.
+https://vignette.wikia.nocookie.net/mlp/images/3/3c/Juniper_Montage_Earth_pony_ID.png/revision/latest?cb=20170613152209
 
 Lavender Sunrise
 rgb(224, 245, 241)
@@ -10586,11 +10596,6 @@ rgb(154, 76, 129)
 https://vignette.wikia.nocookie.net/mlp/images/c/ca/UEM1_ID_S9E26.png/revision/latest?cb=20191013134004`.split("\n\n");
 for (let i = 0; i < ponies.length; i++) {
 	ponies[i] = ponies[i].split("\n");
-	let type = ponies[i][1].toLowerCase();
-	if (type != "alicorn" && type != "unicorn" && type != "pegasus" && type != "earth" && type != "kirin" && type != "unknown") {
-		ponies[i][0] += ", " + ponies[i][1];
-		ponies[i].splice(1, 1);
-	}
 }
 let colorInput = document.createElement("input");
 document.body.appendChild(colorInput);
@@ -10628,9 +10633,9 @@ function color(hexCode) {
 		b: hexToDec[hexCode[5]] * 16 + hexToDec[hexCode[6]]
 	}
 }
-function getNumbers(str) {
+function getNumbers(str, pony) {
 	if (!str.match(/\d+/g)) {
-		console.log(str);
+		console.log(str, pony);
 	}
 	return str.match(/\d+/g).map(Number);
 }
@@ -10640,11 +10645,11 @@ button.addEventListener("click", function() {
 	pre.innerHTML = "";
 	let bufferStr = "";
 	for (let pony of ponies) {
-		let nums = getNumbers(pony[1]);
+		let nums = getNumbers(pony[1], pony);
 		let pr = nums[0];
 		let pg = nums[1];
 		let pb = nums[2];
-		let manums = getNumbers(pony[2]);
+		let manums = getNumbers(pony[2], pony);
 		let thisCloseness = (pr - coat.r) ** 2 + (pg - coat.g) ** 2 + (pb - coat.b) ** 2;
 		thisCloseness += (manums[0] - mane.r) ** 2 + (manums[1] - mane.g) ** 2 + (manums[2] - mane.b) ** 2;
 		if (thisCloseness < Number(numberInput.value)) {
