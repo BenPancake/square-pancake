@@ -5,20 +5,34 @@
 html {
 	width: 4em;
 	height: 4em;
+	font-size: 12pt;
 }
 body {
 	width: 4em;
 	height: 4em;
-	background:
-		repeating-linear-gradient( 0deg, rgba(0,0,0,.7), rgba(0,0,0,.7) 2em, rgba(85,0,85,.5) 2em, rgba(85,0,85,.5) 4em),
-		repeating-linear-gradient(90deg, black, black 2em, rgba(85,0,85,1) 2em, rgba(85,0,85,1) 4em);
+	background: #012;
+		/*repeating-linear-gradient( 0deg, rgba(0,0,0,.7), rgba(0,0,0,.7) 2em, rgba(85,0,85,.5) 2em, rgba(85,0,85,.5) 4em),
+		repeating-linear-gradient(90deg, black, black 2em, rgba(85,0,85,1) 2em, rgba(85,0,85,1) 4em);*/
 }
 button, input, a, pre {
-	background-color: #fa0;
-	border: 3px #ccc solid;
+	background-color: #024;
+	border: none;/*3px #ccc solid;*/
+	color: #edb;
+	border-radius: 3px;
+	padding: 2pt;
 }
 button:active {
-	background-color: #a50;
+	background-color: #036;
+}
+:focus {
+	outline: none;
+}
+input:focus {
+	background-color: #036;
+}
+::selection {
+	background: rgba(238, 221, 187, .996);
+	color: #012;
 }
 		</style>
 	</head>
@@ -598,7 +612,7 @@ canvas.addEventListener("contextmenu", function(e) {
 let a = document.createElement("a");
 document.body.appendChild(a);
 a.innerHTML = "Download last-compiled version";
-a.style = "left: 10px; top: 50px; position: fixed; font: 30px monospace; padding-left: 6px; padding-right: 6px; border-radius: 16px;";
+a.style = "left: 10px; top: 50px; position: fixed; font: 30px monospace;";
 function randHex() {
 	return "0123456789abcdef"[Math.floor(Math.random() * 16)];
 }
@@ -710,12 +724,12 @@ let compbutton = document.createElement("button");
 document.body.appendChild(compbutton);
 compbutton.onclick = compile;
 compbutton.innerHTML = "Compile";
-compbutton.style = "position: fixed; left: 10px; top: 10px; font: 30px monospace; border-radius: 16px;";
+compbutton.style = "position: fixed; left: 10px; top: 10px; font: 30px monospace;";
 let playbutton = document.createElement("button");
 document.body.appendChild(playbutton);
 playbutton.onclick = play;
 playbutton.innerHTML = "Play";
-playbutton.style = "position: fixed; left: 12rem; top: 10px; font: 30px monospace; border-radius: 16px;";
+playbutton.style = "position: fixed; left: 12rem; top: 10px; font: 30px monospace;";
 let pre = document.createElement("pre");
 document.body.appendChild(pre);
 let controlStr = `drag a rightward to add note
@@ -745,7 +759,7 @@ pre.addEventListener("click", function() {
 		pre.innerHTML = "Controls (click here)";
 	}
 }, false);
-pre.style = "position: fixed; left: 580px; top: -10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+pre.style = "position: fixed; left: 580px; top: -10px; font: 12px monospace;";
 let spgInput = document.createElement("input");
 spgInput.value = spg;
 document.body.appendChild(spgInput);
@@ -754,12 +768,12 @@ spgInput.addEventListener("mouseout", function() {
 	updateFancyBuffer();
 	this.blur();
 }, false);
-spgInput.style = "position: fixed; left: 820px; top: 10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+spgInput.style = "position: fixed; left: 820px; top: 10px; font: 12px monospace;";
 spgInput.placeholder = "seconds per group";
 let lenInput = document.createElement("input");
 document.body.appendChild(lenInput);
 lenInput.value = songLength;
-lenInput.style = "position: fixed; left: 820px; top: 30px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+lenInput.style = "position: fixed; left: 820px; top: 30px; font: 12px monospace;";
 lenInput.placeholder = "group count";
 lenInput.addEventListener("mouseout", function() {
 	songLength = Number(lenInput.value);
@@ -807,7 +821,7 @@ loadInput.addEventListener("input", function() {
 	}
 	reader.readAsText(file);
 }, false);
-loadInput.style = "position: fixed; left: 1000px; top: 10px; font: 12px monospace; border-radius: 8px; padding-left: 6px; padding-right: 6px;";
+loadInput.style = "position: fixed; left: 1000px; top: 10px; font: 12px monospace;";
 function grabKeyHandler(b) {
 	/*if (cursor[0] < canvas.offsetLeft || cursor[0] >= canvas.offsetLeft + canvas.width || cursor[1] < canvas.offsetTop || cursor[1] >= canvas.offsetTop + canvas.height) {
 		return;
