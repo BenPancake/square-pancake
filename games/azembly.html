@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script>
+let karcont = document.createElement("div");
+document.body.appendChild(karcont);
+let actx = new AudioContext();
+let arrayBuffer, audioBuffer;
+let dataBuffer = [];
+function bufferToWave(abuffer, len) {
+	var numOfChan = abuffer.numberOfChannels,
+			length = len * numOfChan * 2 + 44,
+			buffer = new ArrayBuffer(length),
+			view = new DataView(buffer),
+			channels = [], i, sample,
+			offset = 0,
+			pos = 0;
+	// write WAVE header
+	setUint32(0x46464952);							// "RIFF"
+	setUint32(length - 8);							// file length - 8
+	setUint32(0x45564157);							// "WAVE"
+
+	setUint32(0x20746d66);							// "fmt " chunk
+	setUint32(16);									// length = 16
+	setUint16(1);									// PCM (uncompressed)
+	setUint16(numOfChan);
+	setUint32(abuffer.sampleRate);
+	setUint32(abuffer.sampleRate * 2 * numOfChan);	// avg. bytes/sec
+	setUint16(numOfChan * 2);						// block-align
+	setUint16(16);									// 16-bit (hardcoded in this demo)
+
+	setUint32(0x61746164);							// "data" - chunk
+	setUint32(length - pos - 4);					// chunk length
+	// write interleaved data
+	for(i = 0; i < abuffer.numberOfChannels; i++) {
+		channels.push(abuffer.getChannelData(i));
+	}
+	while(pos < length) {
+		for(i = 0; i < numOfChan; i++) {						 // interleave channels
+			sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+			sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; // scale to 16-bit signed int
+			view.setInt16(pos, sample, true);					// write 16-bit sample
+			pos += 2;
+		}
+		offset++																		 // next source sample
+	}
+	// create Blob
+	return new Blob([buffer], {type: "audio/wav"});
+	function setUint16(data) {
+		view.setUint16(pos, data, true);
+		pos += 2;
+	}
+	function setUint32(data) {
+		view.setUint32(pos, data, true);
+		pos += 4;
+	}
+}
+let a = document.createElement("a");
+document.body.appendChild(a);
+a.innerHTML = "Download last";
+let button = document.createElement("button");
+button.innerHTML = "Demo file";
+document.body.appendChild(button);
+let pre = document.createElement("pre");
+document.body.appendChild(pre);
+let linpre = document.createElement("pre");
+document.body.appendChild(linpre);
+let logpre = document.createElement("pre");
+document.body.appendChild(logpre);
+let myArrayBuffer;
+function relu(x) {
+	return x < 0 ? 0 : x;
+}
+function randHex() {
+	return "0123456789abcdef"[Math.floor(Math.random() * 16)];
+}
+function compile() {
+	let date = new Date().getTime();
+	myArrayBuffer = actx.createBuffer(2, dataBuffer.length, actx.sampleRate); // len indexes
+	for (let channel = 0; channel < 1;/*myArrayBuffer.numberOfChannels*/ channel++) {
+		let nowBuffering = myArrayBuffer.getChannelData(channel);
+		for (let i = 0; i < dataBuffer.length; i++) {
+			nowBuffering[i] = dataBuffer[i] / 8;
+		}
+	}
+	for (let i = 0; i < myArrayBuffer.getChannelData(0).length; i++) {
+		myArrayBuffer.getChannelData(1)[i] = myArrayBuffer.getChannelData(0)[i];
+	}
+	let url = URL.createObjectURL(bufferToWave(myArrayBuffer, myArrayBuffer.getChannelData(0).length));
+	a.href = url;
+	a.download = randHex() + randHex() + randHex() + randHex() + ".wav";
+	return new Date().getTime() - date;
+}
+let playing = false;
+let spans = [document.createElement("span")];
+let spants = [0];
+let spani = 0;
+let stanzais = [0]; // contains the indexes of the first span of each stanza
+let stanzi = 0;
+function step() {
+	if (spani == stanzais[stanzi + 1]) {
+		while (karcont.firstChild) {
+			karcont.removeChild(karcont.lastChild);
+		}
+		stanzi++;
+		for (let i = stanzais[stanzi]; i < stanzais[stanzi + 1]; i++) {
+			karcont.appendChild(spans[i]);
+		}
+	}
+	if (actx.currentTime > spants[spani + 1]) {
+		spans[spani].style.color = "#000";
+		spani++;
+		spans[spani].style.color = "#f00";
+	}
+	if (playing) {
+		window.requestAnimationFrame(step);
+	}
+}
+let source;
+function play() {
+	window.requestAnimationFrame(step);
+	source = actx.createBufferSource();
+	source.buffer = myArrayBuffer;
+	source.connect(actx.destination);
+	source.start();
+	playing = true;
+	source.onended = function() {
+		playing = false;
+	}
+}
+function halfmod(a, b) {
+	return a / b - Math.floor(a / b);
+}
+let alnum = "0123456789abcdef";
+let alnumobj = {};
+for (let i = 0; i < alnum.length; i++) {
+	alnumobj[alnum[i]] = i;
+}
+alnumobj["-"] = -1; // ah, yes. negatives not as negatives
+function baseCToN(str) {
+	let n = 0;
+	while (str.length > 0) {
+		n *= 12;
+		n += alnumobj[str[0]];
+		str = str.substr(1);
+	}
+	return n;
+}
+function addNote(startT, len, pitch, volume) {
+	let startI = Math.floor(startT * actx.sampleRate);
+	let startII = startI + 1000;
+	let endI = Math.floor((startT + len) * actx.sampleRate);
+	//console.log(pitch, startT);
+	pitch = baseCToN(pitch);
+	let freq = 55 * 2 ** (pitch / 12); // A1 is 0
+	let wavlen = actx.sampleRate / freq;
+	for (let i = startI; i < startII; i++) {
+		dataBuffer[i] += (2 * halfmod(i, wavlen) - 1) * volume * (i - startI) / 1000;
+	}
+	for (let i = startII; i < endI; i++) {
+		dataBuffer[i] += (2 * halfmod(i, wavlen) - 1) * volume;
+	}
+}
+function assemble(str) {
+	let asmStrings = str.split("\n");
+	let lines = [];
+	let funcIndexes = {};
+	let logs = "";
+	let currLine = 0;
+	for (let line of asmStrings) { // get function line numbers
+		if (line.length == 0) {
+			
+		}
+		else if (line[line.length - 1] == ":") {
+			funcIndexes[line.substring(0, line.length - 1)] = lines.length;
+		}
+		else {
+			lines.push(line.split(" "));
+			logs += currLine++ + " " + line + "\n";
+		}
+	}
+	logs += JSON.stringify(funcIndexes, null, 4);
+	linpre.innerHTML = logs;
+	let calledFromLine = 0;
+	let calledFromT = 0; // seconds
+	currLine = 0;
+	let currT = 0; // seconds
+	let maxCalls = 10000;
+	logs = "";
+	let volume = 1;
+	let beatLength = 1;
+	for (let i = 0; i < maxCalls; i++) {
+		let line = lines[currLine];
+		console.log(line);
+		logs += currLine + " " + lines[currLine] + "\n";
+		if (/\d/.test(line[0])) {
+			let noteLen = Number(line[0]) * beatLength;
+			if (line[1] == "no") {
+				
+			}
+			else {
+				addNote(currT, noteLen, line[1], volume);
+				if (line.length > 2) {
+					let span = document.createElement("span");
+					for (let i = 2; i < line.length; i++) {
+						span.innerHTML += line[i];
+						if (i + 1 < line.length) {
+							span.innerHTML += " ";
+						}
+					}
+					spans.push(span);
+					spants.push(currT);
+				}
+			}
+			currT += noteLen;
+		}
+		else if (line[0] == "newscreen") {
+			stanzais.push(spans.length);
+		}
+		else if (line[0] == "ins") {
+			calledFromT    = currT;
+			calledFromLine = currLine;
+			currLine = funcIndexes[line[1]];
+			currLine--; // counteract the end
+		}
+		else if (line[0] == "ret") {
+			currLine = calledFromLine;
+			currT = calledFromT;
+		}
+		else if (line[0] == "vol") {
+			volume = Number(line[1]);
+		}
+		else if (line[0] == "beat") {
+			beatLength = Number(line[1]);
+		}
+		else if (line[0] == "log") {
+			logs += "> " + line[1] + "\n";
+		}
+		else if (line[0] == "leng") {
+			dataBuffer.length = Number(line[1]) * actx.sampleRate;
+			dataBuffer.fill(0);
+		}
+		else if (line[0] == "done") {
+			spans.push(document.createElement("span"));
+			spants.push(currT);
+			stanzais.push(spans.length);
+			break;
+		}
+		currLine++;
+		if (i == maxCalls - 1) {
+			logs += "max calls met, stopping";
+		}
+	}
+	logpre.innerHTML = logs;
+	compile();
+}
+// 0123456789ab 
+// a bc d ef g 
+let demoSong = `
+
+leng 15
+beat .1
+ins a
+a:
+newscreen
+2 19 I
+2 21 i 
+2 21 have 
+
+2 19 no 
+2 19 rea
+2 1b son 
+2 19 to 
+
+4 1b frown<br>
+
+2 no
+
+2 21 I 
+2 21 don't 
+
+4 21 need 
+2 24 to 
+
+2 22 turn 
+2 21 a
+
+4 19 round<br>
+
+4 no
+2 21 What's 
+2 1b the 
+2 1b use 
+2 19 in 
+2 19 cry
+2 16 i
+2 14 ing 
+2 16 now<br>
+
+4 no
+
+2 24 And 
+
+2 24 e
+2 22 ven 
+
+2 21 though 
+2 24 I 
+
+2 24 turned 
+2 22 the 
+
+2 21 odds 
+2 21 a
+
+2 22 gainst 
+2 21 my
+
+4 19 self<br>
+
+3 no
+
+1 22 A
+
+2 24 gain 
+2 22 I 
+
+2 21 find 
+2 24 that 
+
+2 24 I've 
+2 22 been 
+
+2 21 saved 
+2 22 by 
+
+2 22 some
+2 21 one 
+
+2 19 else<br>
+
+
+done
+`;
+
+
+demoSong = `
+leng 15
+beat .1
+newscreen
+2 32 Now 
+1 33 the 
+3 32 hour 
+2 2a has 
+1 30 come 
+1 32 at 
+4 30 last,<br>
+2 29 the 
+2 2a soft 
+2 29 and 
+2 2a fa
+2 30 ding 
+6 27 light<br>
+2 27 Has 
+2 32 crossed 
+1 33 the 
+3 32 west 
+2 2a ho
+2 30 ri
+1 32 zon 
+3 30 and 
+2 29 has 
+1 2a bid
+1 29 den 
+4 2a us 
+2 32 good
+6 37 night<br>
+newscreen
+2 37 And 
+
+1 37 what 
+3 35 a 
+2 33 love
+2 32 ly 
+2 30 night 
+1 32 it 
+4 33 is<br>
+2 29 to 
+
+3 32 walk 
+1 33 a 
+2 32 moon
+2 30 lit 
+6 2a field,<br>
+2 2a to 
+
+2 37 see 
+2 35 the 
+2 33 sof
+2 32 ter 
+3 32 shades 
+1 2a that 
+2 2a are 
+2 30 by 
+
+2 32 star
+2 33 light 
+2 32 now 
+2 30 re
+6 30 vealed
+
+
+done
+
+`;
+
+/*demoSong = `
+leng 9
+beat 1
+newscreen
+1 30 1 
+1 37 2 
+1 34 3
+newscreen
+1 30 4 
+1 37 5 
+1 34 6
+newscreen
+1 30 7 
+1 37 8 
+1 34 9
+done
+`;*/
+// A BC D EF G
+// 0123456789ab
+button.addEventListener("click", function() {
+	assemble(demoSong);
+	play();
+}, false);
+
+pre.innerHTML = "Demo song:\n\n" + demoSong;
+
+let fileInput = document.createElement("input");
+fileInput.type = "file";
+document.body.appendChild(fileInput);
+let fileReader = new FileReader();
+fileReader.addEventListener("loadend", function () {
+	arrayBuffer = fileReader.result;
+	assemble(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+}, false);
+fileInput.oninput = function() {
+	fileReader.readAsArrayBuffer(fileInput.files[0]);
+}
+		</script>
+	</body>
+</html>
