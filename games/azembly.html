@@ -118,10 +118,10 @@ function step() {
 }
 let source;
 function play() {
-	window.requestAnimationFrame(step);
 	source = actx.createBufferSource();
 	source.buffer = myArrayBuffer;
 	source.connect(actx.destination);
+	window.requestAnimationFrame(step);
 	source.start();
 	playing = true;
 	source.onended = function() {
@@ -146,11 +146,31 @@ function baseCToN(str) {
 	}
 	return n;
 }
+function mod(a, b) {
+	return a - b * Math.floor(a / b);
+}
+function nToBaseC(n) {
+	let str = "";
+	let dozits = 0;
+	if (n < 0) {
+		dozits = Math.ceil(Math.log(-n) / Math.log(12));
+	}
+	else {
+		dozits = Math.floor(Math.log(n) / Math.log(12)) + 1;
+	}
+	for (let i = 0; i < dozits; i++) {
+		str = "0123456789ab"[Math.floor(mod(n, 12))] + str;
+		n = Math.floor(n / 12);
+	}
+	if (n < 0) {
+		str = "-" + str;
+	}
+	return str;
+}
 function addNote(startT, len, pitch, volume) {
 	let startI = Math.floor(startT * actx.sampleRate);
 	let startII = startI + 1000;
 	let endI = Math.floor((startT + len) * actx.sampleRate);
-	//console.log(pitch, startT);
 	pitch = baseCToN(pitch);
 	let freq = 55 * 2 ** (pitch / 12); // A1 is 0
 	let wavlen = actx.sampleRate / freq;
@@ -191,7 +211,6 @@ function assemble(str) {
 	let beatLength = 1;
 	for (let i = 0; i < maxCalls; i++) {
 		let line = lines[currLine];
-		console.log(line);
 		logs += currLine + " " + lines[currLine] + "\n";
 		if (/\d/.test(line[0])) {
 			let noteLen = Number(line[0]) * beatLength;
@@ -254,216 +273,366 @@ function assemble(str) {
 	logpre.innerHTML = logs;
 	compile();
 }
+function shift(str, n) {
+	let asmStrings = str.split("\n");
+	let newStr = "";
+	for (let line of asmStrings) {
+		if (line.length == 0) {
+			newStr += "\n";
+		}
+		else if (/\d/.test(line[0])) {
+			let parts = line.split(" ");
+			if (parts[1] == "no") {
+				newStr += line + "\n";
+				continue;
+			}
+			parts[1] = nToBaseC(baseCToN(parts[1]) + n);
+			newStr += parts[0];
+			for (let i = 1; i < parts.length; i++) { // smarter way
+				newStr += " " + parts[i];
+			}
+			newStr += "\n";
+		}
+		else {
+			newStr += line + "\n";
+		}
+	}
+	return newStr;
+}
 // 0123456789ab 
 // a bc d ef g 
-let demoSong = `
-
-leng 15
-beat .1
-ins a
-a:
-newscreen
-2 19 I
-2 21 i 
-2 21 have 
-
-2 19 no 
-2 19 rea
-2 1b son 
-2 19 to 
-
-4 1b frown<br>
-
-2 no
-
-2 21 I 
-2 21 don't 
-
-4 21 need 
-2 24 to 
-
-2 22 turn 
-2 21 a
-
-4 19 round<br>
-
-4 no
-2 21 What's 
-2 1b the 
-2 1b use 
-2 19 in 
-2 19 cry
-2 16 i
-2 14 ing 
-2 16 now<br>
-
-4 no
-
-2 24 And 
-
-2 24 e
-2 22 ven 
-
-2 21 though 
-2 24 I 
-
-2 24 turned 
-2 22 the 
-
-2 21 odds 
-2 21 a
-
-2 22 gainst 
-2 21 my
-
-4 19 self<br>
-
-3 no
-
-1 22 A
-
-2 24 gain 
-2 22 I 
-
-2 21 find 
-2 24 that 
-
-2 24 I've 
-2 22 been 
-
-2 21 saved 
-2 22 by 
-
-2 22 some
-2 21 one 
-
-2 19 else<br>
-
-
-done
-`;
-
+let demoSong;
 
 demoSong = `
-leng 30
+leng 180
 beat .1
 newscreen
-2 32 Now 
-1 33 the 
-3 32 hour 
-2 2a has 
-1 30 come 
-1 32 at 
-4 30 last, 
-2 29 the 
-2 2a soft 
-2 29 and 
-2 2a fa
-2 30 ding 
-6 27 light<br>
-2 27 Has 
-2 32 crossed 
-1 33 the 
-3 32 west 
-2 2a ho
-2 30 ri
-1 32 zon 
-3 30 and 
-2 29 has 
-1 2a bid
-1 29 den 
-4 2a us 
-2 32 good
-6 37 night<br>
-2 37 And 
-1 37 what 
-3 35 a 
-2 33 love
-2 32 ly 
-2 30 night 
-1 32 it 
-4 33 is 
+2 2b Now 
+1 30 the 
+3 2b hour 
+2 27 has 
+1 29 come 
+1 2b at 
+4 29 last, 
+2 26 the 
+2 27 soft 
+2 26 and 
+2 27 fa
+2 29 ding 
+6 24 light<br>
+2 24 Has 
+2 2b crossed 
+1 30 the 
+3 2b west 
+2 27 ho
+2 29 ri
+1 2b zon 
+3 29 and 
+2 26 has 
+1 27 bid
+1 26 den 
+4 27 us 
+2 2b good
+6 34 night<br>
+2 34 And 
+1 34 what 
+3 32 a 
+2 30 love
+2 2b ly 
+2 29 night 
+1 2b it 
+4 30 is 
 2 29 to 
-3 32 walk 
-1 33 a 
-2 32 moon
-2 30 lit 
-6 2a field,<br>
-2 2a to 
-2 37 see 
-2 35 the 
-2 33 sof
-2 32 ter 
-3 32 shades 
-1 2a that 
-2 2a are 
+3 2b walk 
+1 30 a 
+2 2b moon
+2 29 lit 
+6 27 field,<br>
+2 27 to 
+2 34 see 
+2 32 the 
+2 30 sof
+2 2b ter 
+3 2b shades 
+1 30 that 
+2 32 are 
 2 30 by 
-2 32 star
-2 33 light 
-2 32 now 
-2 30 re
-6 30 vealed
+2 2b star
+2 30 light 
+2 2b now 
+2 29 re
+6 29 vealed
 newscreen
-2 27 So 
-2 32 why 
-2 33 is 
-2 32 it 
-2 2a that 
-2 30 now 
-1 32 when 
-3 30 all 
-2 29 is 
-1 2a qui
-5 29 et 
-1 2a and 
-1 30 at 
-6 27 rest,<br>
-2 27 When 
-2 32 can
-2 33 dles 
-2 32 glow 
-2 2a and 
-2 30 all 
-1 32 the 
-3 30 world 
-2 2a is 
-2 2a at 
-2 29 its 
-2 2a ve
-2 32 ry 
-6 37 best<br>
-2 37 The 
-2 37 po
-2 35 nies 
-2 33 of 
-2 32 E
-2 30 que
-1 32 stri
-3 33 a 
+2 24 So 
+2 2b why 
+2 30 is 
+2 2b it 
+2 27 that 
+2 29 now 
+1 2b when 
+3 29 all 
+2 26 is 
+1 27 qui
+5 26 et 
+1 27 and 
+1 29 at 
+6 24 rest,<br>
+2 24 When 
+2 2b can
+2 30 dles 
+2 2b glow 
+2 27 and 
+2 29 all 
+1 2b the 
+3 29 world 
+2 27 is 
+2 27 at 
+2 26 its 
+2 27 ve
+2 2b ry 
+6 34 best<br>
+2 34 The 
+2 34 po
+2 32 nies 
+2 30 of 
+2 2b E
+2 29 que
+1 2b stri
+3 30 a 
 2 29 should 
-2 32 lock 
-2 33 them
-2 32 selves 
-2 30 a
-6 2a way<br>
-2 2a To 
-2 37 shun 
-1 35 the 
-3 33 moon 
-2 32 and 
-1 32 wait 
-3 33 in
-2 35 stead 
-2 32 for 
-2 32 si
-2 33 ster 
-2 32 Sun
-2 33 ny 
-8 32 Day?
+2 2b lock 
+2 30 them
+2 2b selves 
+2 29 a
+6 27 way<br>
+2 27 To 
+2 34 shun 
+1 32 the 
+3 30 moon 
+2 2b and 
+1 2b wait 
+3 30 in
+2 32 stead 
+2 2b for 
+2 2b si
+2 30 ster 
+2 2b Sun
+2 30 ny 
+8 2b Day?
+newscreen
+4 no
+1 2b Am 
+2 2b I 
+1 2b so 
+3 34 wrong 
+1 2b to 
+2 32 wish 
+1 29 that 
+3 29 they 
+2 2b would 
+3 30 see 
+3 2b things 
+1 29 like 
+3 27 I 
+3 27 do?<br>
 
+2 29 And 
+1 24 am 
+3 29 I 
+2 2b so 
+3 30 wrong 
+1 2b to 
+2 2b think 
+2 29 that 
+2 32 they 
+2 30 might 
+2 30 love 
+1 2b me
+1 29 e 
+2 29 too?<br>
+
+
+2 2b Why 
+1 2b shoul
+3 24 dn't 
+2 24 they 
+1 2b a
+3 2b dore 
+4 24 me, 
+1 2b is 
+1 2b it 
+2 2b not 
+1 29 with
+3 27 in 
+4 26 my 
+5 27 right?<br>
+
+3 34 I'll 
+2 34 not 
+1 2b be 
+3 2b o
+2 32 ver
+1 32 sha
+3 30 dowed, 
+2 2b mine 
+2 29 is 
+2 32 not 
+1 30 the 
+2 30 les
+3 2b ser 
+6 29 light!
+
+newscreen
+2 2b I've 
+1 2b wait
+3 24 ed 
+2 29 long 
+1 2b e
+3 30 nough 
+4 2b now, 
+1 2b for 
+1 2b them 
+3 34 all 
+1 32 to 
+1 30 come 
+3 2b a
+3 30 round<br>
+
+3 2b and 
+1 2b though 
+1 2b the 
+3 29 sun 
+3 2b may 
+1 30 plead 
+2 2b and 
+1 29 threa
+2 27 ten, 
+2 32 the 
+3 31 moon 
+1 31 will 
+1 31 stand 
+2 31 her 
+2 31 ground
+
+newscreen
+2 2b It 
+2 32 comes 
+2 2b to 
+2 31 this 
+2 32 at 
+2 31 last, 
+2 31 I 
+2 32 will 
+2 34 no 
+2 36 lon
+2 34 ger 
+2 32 yield 
+2 31 the 
+2 26 sky<br>
+
+2 2b if 
+2 34 they 
+2 39 can
+2 37 not 
+2 34 love 
+2 32 but 
+2 34 one 
+2 32 prin
+2 30 cess 
+2 29 al
+2 27 one<br>
+
+2 27 See 
+2 2b the 
+2 31 moon 
+2 32 is 
+2 31 ri
+2 2a sing, 
+2 2b she 
+2 32 has 
+2 33 come 
+2 32 to 
+2 30 claim 
+2 32 the 
+2 33 hea
+2 32 vens 
+2 30 for 
+2 32 her 
+2 32 own<br>
+
+newscreen
+
+2 31 And 
+3 32 all 
+1 31 will 
+3 2b know 
+1 29 the 
+2 2b won
+3 26 der 
+1 2b of 
+2 32 my 
+2 36 dark 
+2 34 and 
+1 32 jew
+3 2b eled 
+6 31 sky<br>
+
+1 2b When 
+3 2b all 
+1 2b the 
+3 31 world 
+2 32 is 
+3 31 wrapped 
+1 2b in 
+1 31 an 
+1 32 e
+2 31 ter
+3 2b nal 
+3 31 lul
+2 32 la
+3 31 by<br>
+
+2 31 So 
+3 36 say 
+1 34 good 
+2 32 night 
+2 31 to 
+4 32 this, 
+2 2b the 
+1 31 fi
+3 32 nal 
+1 36 set
+3 34 ting 
+2 32 of 
+2 31 the 
+2 31 sun.<br>
+
+2 29 To
+1 2b mor
+2 2b row 
+3 31 dawns 
+2 32 in 
+3 31 dark
+4 2b ness, 
+2 36 the 
+2 36 night-
+2 37 time 
+2 36 has 
+2 2b be
+4 2b gun.
 done
-
 `;
+
+/*
+Phases:
+1	MIDI/assembly hybrid
+2	get basic karaoke
+3	get different stanzas to work
+4	transcribe a full song for it
+5	embarrass myself while converting friends to bronies
+6	get good grade on class project
+
+*/
 // A BC D EF G
 // 0123456789ab
 
